@@ -1,0 +1,32 @@
+# Gradle files
+.gradle/
+build/
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Log Files
+*.log
+
+# Android Studio generated files
+.idea/
+*.iml
+.cxx/
+captures/
+.navigation/
+
+# Keystore files
+*.jks
+*.keystore
+
+# Google Services (already handled by top-level gitignore, but good to have)
+# google-services.json
+
+# Built application files
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Misc
+.DS_Store

@@ -1,3 +1,14 @@
+import java.util.Properties
+
+// Load local properties
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.inputStream())
+}
+
+val serverIp = localProperties.getProperty("server.ip", "10.0.2.2") // Default to emulator localhost if not set
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -21,13 +32,24 @@ android {
         }
     }
 
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
+
     buildTypes {
+        debug {
+            buildConfigField("String", "API_BASE_URL", "\"http://$serverIp:3000/\"")
+            resValue("string", "debug_server_domain", serverIp)
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            buildConfigField("String", "API_BASE_URL", "\"https://api.your-production-domain.com/\"")
+            resValue("string", "debug_server_domain", "api.your-production-domain.com")
         }
     }
     compileOptions {
@@ -36,9 +58,6 @@ android {
     }
     kotlinOptions {
         jvmTarget = "17"
-    }
-    buildFeatures {
-        compose = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.8"
