@@ -2,12 +2,12 @@ import * as admin from 'firebase-admin';
 
 // Carrega as credenciais da conta de serviço
 // O caminho é relativo à raiz do projeto onde o node é executado
-const serviceAccount = require('../../serviceAccountKey.json');
+// const serviceAccount = require('../../serviceAccountKey.json'); // Don't commit
 
 // Inicializa o Firebase Admin SDK
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-});
+// admin.initializeApp({
+//     credential: admin.credential.cert(serviceAccount) // Don't commit
+// });
 
 /**
  * Envia uma notificação push para um dispositivo específico.
@@ -16,23 +16,28 @@ admin.initializeApp({
  * @param title O título da notificação.
  * @param body O corpo do texto da notificação.
  */
-export async function sendPushNotification(token: string, alertId: string, title: string, body: string) {
-    const message = {
-        token: token,
-        notification: {
-            title: title,
-            body: body,
-        },
-        data: {
-            alertId: alertId,
-        },
-    };
+export async function sendPushNotification(
+  token: string,
+  alertId: string,
+  title: string,
+  body: string
+) {
+  const message = {
+    token: token,
+    notification: {
+      title: title,
+      body: body,
+    },
+    data: {
+      alertId: alertId,
+    },
+  };
 
-    try {
-        console.log(`Enviando notificação para o token: ${token}`);
-        const response = await admin.messaging().send(message);
-        console.log('Notificação enviada com sucesso:', response);
-    } catch (error) {
-        console.error('Erro ao enviar notificação:', error);
-    }
+  try {
+    console.log(`Enviando notificação para o token: ${token}`);
+    const response = await admin.messaging().send(message);
+    console.log('Notificação enviada com sucesso:', response);
+  } catch (error) {
+    console.error('Erro ao enviar notificação:', error);
+  }
 }

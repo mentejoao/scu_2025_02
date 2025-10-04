@@ -29,9 +29,13 @@ export function analyzeSevereAnemia(bloodwork: Bloodwork): IndividualAlert | nul
     };
 
     // TODO: Substituir pelo token real do médico responsável por este paciente.
-    const placeholderDoctorToken = "d_x-qptvTN6wbUy146HUjc:APA91bGbQqYn72DIV7DDnTYCFB1ZjgyGYhFlypj1SaTdl76dY_y97dxSik7wQTfRVg5Wv7MIISWLwWaE9q3bfrcKt3ZP1jGenpIhg2KSDhrc76nt0cqrCaI";
+    const placeholderDoctorToken =
+      'd_x-qptvTN6wbUy146HUjc:APA91bGbQqYn72DIV7DDnTYCFB1ZjgyGYhFlypj1SaTdl76dY_y97dxSik7wQTfRVg5Wv7MIISWLwWaE9q3bfrcKt3ZP1jGenpIhg2KSDhrc76nt0cqrCaI';
 
-    if (placeholderDoctorToken !== "d_x-qptvTN6wbUy146HUjc:APA91bGbQqYn72DIV7DDnTYCFB1ZjgyGYhFlypj1SaTdl76dY_y97dxSik7wQTfRVg5Wv7MIISWLwWaE9q3bfrcKt3ZP1jGenpIhg2KSDhrc76nt0cqrCaI") {
+    if (
+      placeholderDoctorToken !==
+      'd_x-qptvTN6wbUy146HUjc:APA91bGbQqYn72DIV7DDnTYCFB1ZjgyGYhFlypj1SaTdl76dY_y97dxSik7wQTfRVg5Wv7MIISWLwWaE9q3bfrcKt3ZP1jGenpIhg2KSDhrc76nt0cqrCaI'
+    ) {
       sendPushNotification(
         placeholderDoctorToken,
         alert.patient_cpf, // Usando o CPF como um ID de alerta único

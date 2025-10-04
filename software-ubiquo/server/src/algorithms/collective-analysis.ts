@@ -4,8 +4,8 @@ import {
   getBaselineForRegion,
   getEosinophiliaCasesInWindow,
   getTotalTestsInArea,
-} from '../database/mock-db';
-import { EosinophiliaCase } from '../database/types';
+} from '../database/db';
+import { EosinophiliaCase } from '../database/schema';
 import { sendPushNotification } from '../services/notification-service';
 
 // --- Helper Functions ---
@@ -24,7 +24,7 @@ const getDemographics = (
   const totalAge = cluster.reduce((sum, c) => sum + c.age, 0);
   const sexDistribution = cluster.reduce(
     (acc, c) => {
-      acc[c.sex]++;
+      acc[c.sex as keyof typeof acc]++;
       return acc;
     },
     { M: 0, F: 0 }
@@ -141,9 +141,13 @@ export async function analyzeParasitosisOutbreak(): Promise<CollectiveAlert[]> {
       collectiveAlerts.push(alert);
 
       // TODO: Substituir pelo token real do gestor de saúde da região.
-      const placeholderManagerToken = "d_x-qptvTN6wbUy146HUjc:APA91bGbQqYn72DIV7DDnTYCFB1ZjgyGYhFlypj1SaTdl76dY_y97dxSik7wQTfRVg5Wv7MIISWLwWaE9q3bfrcKt3ZP1jGenpIhg2KSDhrc76nt0cqrCaI";
+      const placeholderManagerToken =
+        'd_x-qptvTN6wbUy146HUjc:APA91bGbQqYn72DIV7DDnTYCFB1ZjgyGYhFlypj1SaTdl76dY_y97dxSik7wQTfRVg5Wv7MIISWLwWaE9q3bfrcKt3ZP1jGenpIhg2KSDhrc76nt0cqrCaI';
 
-      if (placeholderManagerToken !== "d_x-qptvTN6wbUy146HUjc:APA91bGbQqYn72DIV7DDnTYCFB1ZjgyGYhFlypj1SaTdl76dY_y97dxSik7wQTfRVg5Wv7MIISWLwWaE9q3bfrcKt3ZP1jGenpIhg2KSDhrc76nt0cqrCaI") {
+      if (
+        placeholderManagerToken !==
+        'd_x-qptvTN6wbUy146HUjc:APA91bGbQqYn72DIV7DDnTYCFB1ZjgyGYhFlypj1SaTdl76dY_y97dxSik7wQTfRVg5Wv7MIISWLwWaE9q3bfrcKt3ZP1jGenpIhg2KSDhrc76nt0cqrCaI'
+      ) {
         sendPushNotification(
           placeholderManagerToken,
           alert.location.municipality_id, // Usando o ID do município como ID do alerta
