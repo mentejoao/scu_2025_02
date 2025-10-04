@@ -4,8 +4,8 @@ import {
   getBaselineForRegion,
   getEosinophiliaCasesInWindow,
   getTotalTestsInArea,
-} from '../database/mock-db';
-import { EosinophiliaCase } from '../database/types';
+} from '../database/db';
+import { EosinophiliaCase } from '../database/schema';
 import { sendPushNotification } from '../services/notification-service';
 
 // --- Helper Functions ---
@@ -24,7 +24,7 @@ const getDemographics = (
   const totalAge = cluster.reduce((sum, c) => sum + c.age, 0);
   const sexDistribution = cluster.reduce(
     (acc, c) => {
-      acc[c.sex]++;
+      acc[c.sex as keyof typeof acc]++;
       return acc;
     },
     { M: 0, F: 0 }
