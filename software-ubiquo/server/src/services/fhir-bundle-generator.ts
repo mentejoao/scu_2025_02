@@ -5,7 +5,6 @@ import { Bundle } from '../types/fhir';
  * Generates FHIR Bundle resources that match the criteria for eosinophilia case extraction
  */
 export class FhirBundleGenerator {
-  
   /**
    * Generates a complete FHIR Bundle with Patient and Eosinophils Observation
    * @param patientData Patient information
@@ -34,7 +33,7 @@ export class FhirBundleGenerator {
     }
   ): Bundle {
     const bundleId = `bundle-${Date.now()}`;
-    
+
     return {
       resourceType: 'Bundle',
       id: bundleId,
@@ -47,22 +46,26 @@ export class FhirBundleGenerator {
             id: patientData.id,
             gender: patientData.gender,
             birthDate: patientData.birthDate,
-            address: [{
-              use: 'home',
-              line: ['Endereço do paciente'],
-              city: patientData.address.city || 'São Paulo',
-              state: patientData.address.state || 'SP',
-              postalCode: patientData.address.postalCode || '01234-567',
-              country: 'BR',
-              extension: [{
-                url: 'http://hl7.org/fhir/StructureDefinition/geolocation',
+            address: [
+              {
+                use: 'home',
+                line: ['Endereço do paciente'],
+                city: patientData.address.city || 'São Paulo',
+                state: patientData.address.state || 'SP',
+                postalCode: patientData.address.postalCode || '01234-567',
+                country: 'BR',
                 extension: [
-                  { url: 'latitude', valueDecimal: patientData.address.latitude },
-                  { url: 'longitude', valueDecimal: patientData.address.longitude }
-                ]
-              }]
-            }]
-          }
+                  {
+                    url: 'http://hl7.org/fhir/StructureDefinition/geolocation',
+                    extension: [
+                      { url: 'latitude', valueDecimal: patientData.address.latitude },
+                      { url: 'longitude', valueDecimal: patientData.address.longitude },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
         },
         {
           fullUrl: `urn:uuid:observation-${observationData.id}`,
@@ -71,25 +74,27 @@ export class FhirBundleGenerator {
             id: observationData.id,
             status: 'final',
             code: {
-              coding: [{
-                system: 'http://loinc.org',
-                code: '770-0',
-                display: 'Eosinophils/100 leukocytes in Blood by Automated count'
-              }]
+              coding: [
+                {
+                  system: 'http://loinc.org',
+                  code: '770-0',
+                  display: 'Eosinophils/100 leukocytes in Blood by Automated count',
+                },
+              ],
             },
             subject: {
-              reference: `Patient/${patientData.id}`
+              reference: `Patient/${patientData.id}`,
             },
             effectiveDateTime: observationData.effectiveDateTime,
             valueQuantity: {
               value: observationData.eosinophilsValue,
               unit: observationData.unit || '%',
               system: 'http://unitsofmeasure.org',
-              code: observationData.unit || '%'
-            }
-          }
-        }
-      ]
+              code: observationData.unit || '%',
+            },
+          },
+        },
+      ],
     };
   }
 
@@ -133,22 +138,26 @@ export class FhirBundleGenerator {
           id: caseData.patient.id,
           gender: caseData.patient.gender,
           birthDate: caseData.patient.birthDate,
-          address: [{
-            use: 'home',
-            line: [`Endereço do paciente ${index + 1}`],
-            city: caseData.patient.address.city || 'São Paulo',
-            state: caseData.patient.address.state || 'SP',
-            postalCode: caseData.patient.address.postalCode || '01234-567',
-            country: 'BR',
-            extension: [{
-              url: 'http://hl7.org/fhir/StructureDefinition/geolocation',
+          address: [
+            {
+              use: 'home',
+              line: [`Endereço do paciente ${index + 1}`],
+              city: caseData.patient.address.city || 'São Paulo',
+              state: caseData.patient.address.state || 'SP',
+              postalCode: caseData.patient.address.postalCode || '01234-567',
+              country: 'BR',
               extension: [
-                { url: 'latitude', valueDecimal: caseData.patient.address.latitude },
-                { url: 'longitude', valueDecimal: caseData.patient.address.longitude }
-              ]
-            }]
-          }]
-        }
+                {
+                  url: 'http://hl7.org/fhir/StructureDefinition/geolocation',
+                  extension: [
+                    { url: 'latitude', valueDecimal: caseData.patient.address.latitude },
+                    { url: 'longitude', valueDecimal: caseData.patient.address.longitude },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
       });
 
       // Add Observation
@@ -159,23 +168,25 @@ export class FhirBundleGenerator {
           id: caseData.observation.id,
           status: 'final',
           code: {
-            coding: [{
-              system: 'http://loinc.org',
-              code: '770-0',
-              display: 'Eosinophils/100 leukocytes in Blood by Automated count'
-            }]
+            coding: [
+              {
+                system: 'http://loinc.org',
+                code: '770-0',
+                display: 'Eosinophils/100 leukocytes in Blood by Automated count',
+              },
+            ],
           },
           subject: {
-            reference: `Patient/${caseData.patient.id}`
+            reference: `Patient/${caseData.patient.id}`,
           },
           effectiveDateTime: caseData.observation.effectiveDateTime,
           valueQuantity: {
             value: caseData.observation.eosinophilsValue,
             unit: caseData.observation.unit || '%',
             system: 'http://unitsofmeasure.org',
-            code: caseData.observation.unit || '%'
-          }
-        }
+            code: caseData.observation.unit || '%',
+          },
+        },
       });
     });
 
@@ -183,7 +194,7 @@ export class FhirBundleGenerator {
       resourceType: 'Bundle',
       id: bundleId,
       type: 'collection',
-      entry: entries
+      entry: entries,
     };
   }
 
@@ -203,14 +214,14 @@ export class FhirBundleGenerator {
           municipality_id: '3550308',
           postalCode: '01234-567',
           city: 'São Paulo',
-          state: 'SP'
-        }
+          state: 'SP',
+        },
       },
       {
         id: 'eosinophils-sample-001',
         eosinophilsValue: 12.5, // Elevated eosinophils
         effectiveDateTime: '2024-01-15T10:30:00Z',
-        unit: '%'
+        unit: '%',
       }
     );
   }
@@ -231,14 +242,14 @@ export class FhirBundleGenerator {
           municipality_id: '3550308',
           postalCode: '01234-567',
           city: 'São Paulo',
-          state: 'SP'
-        }
+          state: 'SP',
+        },
       },
       {
         id: 'eosinophils-normal-001',
         eosinophilsValue: 2.1, // Normal eosinophils
         effectiveDateTime: '2024-01-15T14:20:00Z',
-        unit: '%'
+        unit: '%',
       }
     );
   }

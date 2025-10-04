@@ -39,4 +39,3 @@ export const closeConnection = async () => {
   await pool.end();
   console.log('Database connection pool closed');
 };
-

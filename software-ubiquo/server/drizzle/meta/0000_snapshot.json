@@ -69,12 +69,8 @@
           "name": "city_codigo_uf_estados_codigo_uf_fk",
           "tableFrom": "city",
           "tableTo": "estados",
-          "columnsFrom": [
-            "codigo_uf"
-          ],
-          "columnsTo": [
-            "codigo_uf"
-          ],
+          "columnsFrom": ["codigo_uf"],
+          "columnsTo": ["codigo_uf"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -84,9 +80,7 @@
         "city_siafi_id_unique": {
           "name": "city_siafi_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "siafi_id"
-          ]
+          "columns": ["siafi_id"]
         }
       },
       "policies": {},

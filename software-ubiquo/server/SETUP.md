@@ -11,11 +11,13 @@ Este guia fornece instruções passo a passo para configurar o banco de dados Po
 ## ⚡ Setup Automático (Recomendado)
 
 ### Linux/macOS:
+
 ```bash
 ./scripts/setup-db.sh
 ```
 
 ### Windows:
+
 ```bash
 scripts\setup-db.bat
 ```
@@ -25,6 +27,7 @@ scripts\setup-db.bat
 ### 1. Instalar dependências
 
 As dependências já foram instaladas:
+
 - ✅ `drizzle-orm` - ORM para TypeScript
 - ✅ `pg` - Cliente PostgreSQL para Node.js
 - ✅ `dotenv` - Gerenciamento de variáveis de ambiente
@@ -50,20 +53,24 @@ DB_NAME=ubiqua_db
 ### 3. Criar o banco de dados
 
 **Opção A: Via linha de comando**
+
 ```bash
 createdb ubiqua_db
 ```
 
 **Opção B: Via psql**
+
 ```bash
 psql -U postgres
 ```
+
 ```sql
 CREATE DATABASE ubiqua_db;
 \q
 ```
 
 **Opção C: Via pgAdmin**
+
 - Abra o pgAdmin
 - Clique com o botão direito em "Databases"
 - Selecione "Create" → "Database"
@@ -76,6 +83,7 @@ npm run db:push
 ```
 
 Este comando cria todas as tabelas no banco de dados:
+
 - ✅ `estados` - Estados brasileiros
 - ✅ `city` - Municípios
 - ✅ `eosinophilia_cases` - Casos de eosinofilia
@@ -89,6 +97,7 @@ npm run db:seed
 ```
 
 Este comando insere:
+
 - 1 estado (Goiás)
 - 1 município (Goiânia)
 - 60 casos de eosinofilia (10 agrupados + 50 dispersos)
@@ -104,6 +113,7 @@ npm run start:api
 ```
 
 Se tudo estiver correto, você verá:
+
 ```
 ✅ Database connection successful
 Server running on port 3000
@@ -125,15 +135,15 @@ npm test
 
 ## 📚 Scripts Disponíveis
 
-| Comando | Descrição |
-|---------|-----------|
-| `npm run db:generate` | Gera arquivos de migração |
-| `npm run db:push` | Aplica schema ao banco |
-| `npm run db:migrate` | Executa migrações pendentes |
-| `npm run db:studio` | Abre interface visual do banco |
-| `npm run db:seed` | Popula com dados de teste |
-| `npm run start:api` | Inicia servidor de desenvolvimento |
-| `npm test` | Executa testes |
+| Comando               | Descrição                          |
+| --------------------- | ---------------------------------- |
+| `npm run db:generate` | Gera arquivos de migração          |
+| `npm run db:push`     | Aplica schema ao banco             |
+| `npm run db:migrate`  | Executa migrações pendentes        |
+| `npm run db:studio`   | Abre interface visual do banco     |
+| `npm run db:seed`     | Popula com dados de teste          |
+| `npm run start:api`   | Inicia servidor de desenvolvimento |
+| `npm test`            | Executa testes                     |
 
 ## 🗂️ Estrutura de Arquivos
 
@@ -158,12 +168,14 @@ server/
 ## 🔄 Mudanças no Código
 
 ### Antes (mock-db):
+
 ```typescript
 import { getEosinophiliaCasesInWindow } from '../database/mock-db';
 import { EosinophiliaCase } from '../database/types';
 ```
 
 ### Depois (Drizzle):
+
 ```typescript
 import { getEosinophiliaCasesInWindow } from '../database/db';
 import { EosinophiliaCase } from '../database/schema';
@@ -176,6 +188,7 @@ import { EosinophiliaCase } from '../database/schema';
 **Causa**: PostgreSQL não está rodando
 
 **Solução**:
+
 ```bash
 # macOS (Homebrew)
 brew services start postgresql
@@ -192,6 +205,7 @@ pg_isready
 **Causa**: Banco de dados não foi criado
 
 **Solução**:
+
 ```bash
 createdb ubiqua_db
 ```
@@ -207,6 +221,7 @@ createdb ubiqua_db
 **Causa**: Migrações não foram aplicadas
 
 **Solução**:
+
 ```bash
 npm run db:push
 ```
@@ -216,6 +231,7 @@ npm run db:push
 **Causa**: Cache desatualizado
 
 **Solução**:
+
 ```bash
 rm -rf dist/ node_modules/
 npm install
@@ -252,6 +268,6 @@ Se você encontrar problemas:
 **Pronto!** 🎉 Seu ambiente está configurado e pronto para desenvolvimento.
 
 Para mais informações, consulte:
+
 - `README.md` - Visão geral do projeto
 - `MIGRATION_GUIDE.md` - Detalhes técnicos da migração
-

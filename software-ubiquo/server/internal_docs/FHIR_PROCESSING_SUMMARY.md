@@ -1,6 +1,7 @@
 # FHIR Processing Logic Summary
 
 ## Overview
+
 This system processes FHIR (Fast Healthcare Interoperability Resources) bundles containing hemogram data to detect and store eosinophilia cases in a database. The main goal is to parse medical laboratory results and identify patients with elevated eosinophil counts.
 
 ## Architecture
@@ -20,7 +21,7 @@ This system processes FHIR (Fast Healthcare Interoperability Resources) bundles 
 3. **UnitConverter** (`src/services/unit-converter.ts`)
    - Normalizes eosinophil values from different units
    - Detects eosinophilia and determines severity levels
-   - Supports unit conversion between %, cells/uL, and 10*9/L
+   - Supports unit conversion between %, cells/uL, and 10\*9/L
 
 4. **Error Handling** (`src/types/parsing-errors.ts`)
    - Structured error collection and logging
@@ -82,13 +83,13 @@ extension.where(url='http://hl7.org/fhir/StructureDefinition/geolocation').exten
 
 ### Supported Units and Conversions
 
-| Unit | Conversion Factor to % | Example |
-|------|----------------------|---------|
-| % | 1.0 | 7.5% → 7.5% |
-| cells/uL | 0.014 | 500 cells/uL → 7.0% |
-| /uL | 0.014 | 500 /uL → 7.0% |
-| 10*9/L | 14.0 | 0.6 10*9/L → 8.4% |
-| 10^9/L | 14.0 | 0.6 10^9/L → 8.4% |
+| Unit     | Conversion Factor to % | Example             |
+| -------- | ---------------------- | ------------------- |
+| %        | 1.0                    | 7.5% → 7.5%         |
+| cells/uL | 0.014                  | 500 cells/uL → 7.0% |
+| /uL      | 0.014                  | 500 /uL → 7.0%      |
+| 10\*9/L  | 14.0                   | 0.6 10\*9/L → 8.4%  |
+| 10^9/L   | 14.0                   | 0.6 10^9/L → 8.4%   |
 
 ### Eosinophilia Detection
 
@@ -102,6 +103,7 @@ extension.where(url='http://hl7.org/fhir/StructureDefinition/geolocation').exten
 ### Address Prioritization
 
 When multiple addresses exist, the system prioritizes by `use` field:
+
 1. `home` (preferred)
 2. `work`
 3. `temp`
@@ -113,14 +115,14 @@ When multiple addresses exist, the system prioritizes by `use` field:
 
 ```typescript
 interface NewEosinophiliaCase {
-  id: string;                    // Unique case ID: "{bundleId}-{patientId}-{observationId}"
-  test_date: Date;               // Date of the laboratory test
-  eosinophils_value: number;     // Normalized eosinophil value in %
-  age: number;                   // Patient age in years
-  sex: 'M' | 'F';               // Patient sex
-  latitude: number;              // Patient location latitude (or 0 if unknown)
-  longitude: number;             // Patient location longitude (or 0 if unknown)
-  municipality_id: string;       // Municipality ID (default: '0000000')
+  id: string; // Unique case ID: "{bundleId}-{patientId}-{observationId}"
+  test_date: Date; // Date of the laboratory test
+  eosinophils_value: number; // Normalized eosinophil value in %
+  age: number; // Patient age in years
+  sex: 'M' | 'F'; // Patient sex
+  latitude: number; // Patient location latitude (or 0 if unknown)
+  longitude: number; // Patient location longitude (or 0 if unknown)
+  municipality_id: string; // Municipality ID (default: '0000000')
 }
 ```
 
@@ -128,12 +130,12 @@ interface NewEosinophiliaCase {
 
 ```typescript
 interface ParsingError {
-  patientId?: string;            // Patient ID if available
-  field: string;                 // Field that caused the error
-  reason: string;                // Error description
+  patientId?: string; // Patient ID if available
+  field: string; // Field that caused the error
+  reason: string; // Error description
   severity: 'error' | 'warning'; // Error severity
-  resourceType?: string;         // FHIR resource type
-  resourceId?: string;           // FHIR resource ID
+  resourceType?: string; // FHIR resource type
+  resourceId?: string; // FHIR resource ID
 }
 ```
 
@@ -173,9 +175,9 @@ interface ParsingError {
 ```typescript
 POST /fhir/webhook
 Body: { bundleId: string }
-Response: { 
-  cases: NewEosinophiliaCase[], 
-  errors: ParsingError[] 
+Response: {
+  cases: NewEosinophiliaCase[],
+  errors: ParsingError[]
 }
 ```
 

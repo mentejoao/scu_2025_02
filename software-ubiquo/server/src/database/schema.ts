@@ -1,4 +1,12 @@
-import { pgTable, varchar, integer, boolean, doublePrecision, timestamp, serial } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  varchar,
+  integer,
+  boolean,
+  doublePrecision,
+  timestamp,
+  serial,
+} from 'drizzle-orm/pg-core';
 
 // Estados (States) table
 export const estados = pgTable('state', {
@@ -17,7 +25,9 @@ export const city = pgTable('city', {
   latitude: doublePrecision('latitude').notNull(),
   longitude: doublePrecision('longitude').notNull(),
   capital: boolean('capital').notNull(),
-  codigo_uf: integer('codigo_uf').notNull().references(() => estados.codigo_uf),
+  codigo_uf: integer('codigo_uf')
+    .notNull()
+    .references(() => estados.codigo_uf),
   siafi_id: varchar('siafi_id', { length: 4 }).notNull().unique(),
   ddd: integer('ddd').notNull(),
   fuso_horario: varchar('fuso_horario', { length: 32 }).notNull(),
@@ -68,4 +78,3 @@ export type NewEosinophiliaCase = typeof eosinophiliaCases.$inferInsert;
 
 export type RegionalBaseline = typeof regionalBaselines.$inferSelect;
 export type NewRegionalBaseline = typeof regionalBaselines.$inferInsert;
-

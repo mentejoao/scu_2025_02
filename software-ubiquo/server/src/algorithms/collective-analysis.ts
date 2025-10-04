@@ -141,9 +141,13 @@ export async function analyzeParasitosisOutbreak(): Promise<CollectiveAlert[]> {
       collectiveAlerts.push(alert);
 
       // TODO: Substituir pelo token real do gestor de saúde da região.
-      const placeholderManagerToken = "d_x-qptvTN6wbUy146HUjc:APA91bGbQqYn72DIV7DDnTYCFB1ZjgyGYhFlypj1SaTdl76dY_y97dxSik7wQTfRVg5Wv7MIISWLwWaE9q3bfrcKt3ZP1jGenpIhg2KSDhrc76nt0cqrCaI";
+      const placeholderManagerToken =
+        'd_x-qptvTN6wbUy146HUjc:APA91bGbQqYn72DIV7DDnTYCFB1ZjgyGYhFlypj1SaTdl76dY_y97dxSik7wQTfRVg5Wv7MIISWLwWaE9q3bfrcKt3ZP1jGenpIhg2KSDhrc76nt0cqrCaI';
 
-      if (placeholderManagerToken !== "d_x-qptvTN6wbUy146HUjc:APA91bGbQqYn72DIV7DDnTYCFB1ZjgyGYhFlypj1SaTdl76dY_y97dxSik7wQTfRVg5Wv7MIISWLwWaE9q3bfrcKt3ZP1jGenpIhg2KSDhrc76nt0cqrCaI") {
+      if (
+        placeholderManagerToken !==
+        'd_x-qptvTN6wbUy146HUjc:APA91bGbQqYn72DIV7DDnTYCFB1ZjgyGYhFlypj1SaTdl76dY_y97dxSik7wQTfRVg5Wv7MIISWLwWaE9q3bfrcKt3ZP1jGenpIhg2KSDhrc76nt0cqrCaI'
+      ) {
         sendPushNotification(
           placeholderManagerToken,
           alert.location.municipality_id, // Usando o ID do município como ID do alerta

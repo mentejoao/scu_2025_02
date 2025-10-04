@@ -1,8 +1,17 @@
 import fhirpath from 'fhirpath';
 import { Bundle, Patient, Observation } from 'fhir/r4';
 import { NewEosinophiliaCase } from '../database/schema';
-import { normalizeEosinophilValue, isEosinophilia, getEosinophiliaSeverity } from './unit-converter';
-import { ParsingError, EosinophiliaParsingResult, createParsingError, logParsingError } from '../types/parsing-errors';
+import {
+  normalizeEosinophilValue,
+  isEosinophilia,
+  getEosinophiliaSeverity,
+} from './unit-converter';
+import {
+  ParsingError,
+  EosinophiliaParsingResult,
+  createParsingError,
+  logParsingError,
+} from '../types/parsing-errors';
 
 /**
  * FHIR Parser Service using FHIRPath for extracting eosinophilia case data
@@ -15,32 +24,39 @@ export class FhirParser {
    */
   static parseBundleForEosinophiliaCases(bundle: Bundle): EosinophiliaParsingResult {
     const errors: ParsingError[] = [];
-    
+
     if (!bundle.entry || bundle.entry.length === 0) {
-      errors.push(createParsingError(
-        undefined,
-        'Bundle.entry',
-        'Bundle has no entries to process',
-        'warning',
-        'Bundle',
-        bundle.id
-      ));
+      errors.push(
+        createParsingError(
+          undefined,
+          'Bundle.entry',
+          'Bundle has no entries to process',
+          'warning',
+          'Bundle',
+          bundle.id
+        )
+      );
       return { cases: [], errors };
     }
 
     try {
       // Extract all patients using FHIRPath
-      const patients = fhirpath.evaluate(bundle, "Bundle.entry.resource.where(resourceType='Patient')") as Patient[];
-      
+      const patients = fhirpath.evaluate(
+        bundle,
+        "Bundle.entry.resource.where(resourceType='Patient')"
+      ) as Patient[];
+
       if (patients.length === 0) {
-        errors.push(createParsingError(
-          undefined,
-          'Bundle.entry.resource',
-          'No Patient resources found in Bundle',
-          'warning',
-          'Bundle',
-          bundle.id
-        ));
+        errors.push(
+          createParsingError(
+            undefined,
+            'Bundle.entry.resource',
+            'No Patient resources found in Bundle',
+            'warning',
+            'Bundle',
+            bundle.id
+          )
+        );
         return { cases: [], errors };
       }
 
@@ -49,28 +65,32 @@ export class FhirParser {
       // Process each patient
       for (const patient of patients) {
         if (!patient.id) {
-          errors.push(createParsingError(
-            undefined,
-            'Patient.id',
-            'Patient resource missing ID',
-            'error',
-            'Patient'
-          ));
+          errors.push(
+            createParsingError(
+              undefined,
+              'Patient.id',
+              'Patient resource missing ID',
+              'error',
+              'Patient'
+            )
+          );
           continue;
         }
 
         // Find all eosinophil observations for this patient using FHIRPath
         const eosinophilObservations = this.findAllEosinophilObservations(bundle, patient.id);
-        
+
         if (eosinophilObservations.length === 0) {
-          errors.push(createParsingError(
-            patient.id,
-            'Observation',
-            'No eosinophil observations found for patient',
-            'warning',
-            'Patient',
-            patient.id
-          ));
+          errors.push(
+            createParsingError(
+              patient.id,
+              'Observation',
+              'No eosinophil observations found for patient',
+              'warning',
+              'Patient',
+              patient.id
+            )
+          );
           continue;
         }
 
@@ -82,7 +102,7 @@ export class FhirParser {
             bundle.id || 'unknown',
             errors
           );
-          
+
           if (eosinophiliaCase) {
             cases.push(eosinophiliaCase);
           }
@@ -115,10 +135,11 @@ export class FhirParser {
   private static findAllEosinophilObservations(bundle: Bundle, patientId: string): Observation[] {
     try {
       // FHIRPath query to find all eosinophil observations for a specific patient
-      const observations = fhirpath.evaluate(bundle, 
+      const observations = fhirpath.evaluate(
+        bundle,
         `Bundle.entry.resource.where(resourceType='Observation' and subject.reference='Patient/${patientId}' and code.coding.code='770-0')`
       ) as Observation[];
-      
+
       return observations;
     } catch (error) {
       console.error(`Error finding eosinophil observations for patient ${patientId}:`, error);
@@ -243,22 +264,22 @@ export class FhirParser {
    */
   private static calculateAge(birthDate?: string): number | null {
     if (!birthDate) return null;
-    
+
     try {
       const birth = new Date(birthDate);
       const now = new Date();
-      
+
       if (isNaN(birth.getTime())) {
         return null;
       }
-      
+
       const age = now.getFullYear() - birth.getFullYear();
       const monthDiff = now.getMonth() - birth.getMonth();
-      
+
       if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) {
         return age - 1;
       }
-      
+
       return age;
     } catch (error) {
       return null;
@@ -272,9 +293,12 @@ export class FhirParser {
    */
   private static mapGenderToSex(gender?: string): 'M' | 'F' | null {
     switch (gender) {
-      case 'male': return 'M';
-      case 'female': return 'F';
-      default: return null;
+      case 'male':
+        return 'M';
+      case 'female':
+        return 'F';
+      default:
+        return null;
     }
   }
 
@@ -284,22 +308,27 @@ export class FhirParser {
    * @param errors Array to collect parsing errors
    * @returns Location data or null
    */
-  private static extractLocation(patient: Patient, errors: ParsingError[]): { latitude: number; longitude: number; municipality_id: string } | null {
+  private static extractLocation(
+    patient: Patient,
+    errors: ParsingError[]
+  ): { latitude: number; longitude: number; municipality_id: string } | null {
     if (!patient.address || patient.address.length === 0) {
       return null;
     }
 
     // Prioritize addresses by use field
     const prioritizedAddresses = this.prioritizeAddresses(patient.address);
-    
+
     for (const address of prioritizedAddresses) {
       // Look for geolocation extension using FHIRPath
-      const latitudeResult = fhirpath.evaluate(address, 
+      const latitudeResult = fhirpath.evaluate(
+        address,
         "extension.where(url='http://hl7.org/fhir/StructureDefinition/geolocation').extension.where(url='latitude').valueDecimal"
       ) as any[];
       const latitude = latitudeResult[0] as number | undefined;
-      
-      const longitudeResult = fhirpath.evaluate(address,
+
+      const longitudeResult = fhirpath.evaluate(
+        address,
         "extension.where(url='http://hl7.org/fhir/StructureDefinition/geolocation').extension.where(url='longitude').valueDecimal"
       ) as any[];
       const longitude = longitudeResult[0] as number | undefined;
@@ -310,7 +339,7 @@ export class FhirParser {
         return {
           latitude,
           longitude,
-          municipality_id: '0000000' // Default municipality ID
+          municipality_id: '0000000', // Default municipality ID
         };
       }
     }
@@ -325,23 +354,23 @@ export class FhirParser {
    */
   private static prioritizeAddresses(addresses: any[]): any[] {
     const priorityOrder = ['home', 'work', 'temp'];
-    
+
     return addresses.sort((a, b) => {
       const aUse = a.use || '';
       const bUse = b.use || '';
-      
+
       const aIndex = priorityOrder.indexOf(aUse);
       const bIndex = priorityOrder.indexOf(bUse);
-      
+
       // If both have priority, sort by priority
       if (aIndex !== -1 && bIndex !== -1) {
         return aIndex - bIndex;
       }
-      
+
       // If only one has priority, prioritize it
       if (aIndex !== -1) return -1;
       if (bIndex !== -1) return 1;
-      
+
       // If neither has priority, maintain original order
       return 0;
     });
@@ -353,10 +382,16 @@ export class FhirParser {
    * @param errors Array to collect parsing errors
    * @returns Normalized value or null
    */
-  private static extractEosinophilsValue(observation: Observation, errors: ParsingError[]): { value: number; unit: string } | null {
+  private static extractEosinophilsValue(
+    observation: Observation,
+    errors: ParsingError[]
+  ): { value: number; unit: string } | null {
     try {
       // Extract value and unit using FHIRPath
-      const valueResult = fhirpath.evaluate(observation, 'Observation.valueQuantity.value') as any[];
+      const valueResult = fhirpath.evaluate(
+        observation,
+        'Observation.valueQuantity.value'
+      ) as any[];
       const value = valueResult[0] as number | undefined;
       const unitResult = fhirpath.evaluate(observation, 'Observation.valueQuantity.unit') as any[];
       const unit = unitResult[0] as string | undefined;
@@ -366,27 +401,29 @@ export class FhirParser {
       }
 
       const normalizedUnit = unit || '%'; // Default to percentage if no unit specified
-      
+
       try {
         const normalized = normalizeEosinophilValue(value, normalizedUnit);
-        
+
         // Check if this indicates eosinophilia
         if (isEosinophilia(normalized)) {
           const severity = getEosinophiliaSeverity(normalized);
           console.log(`Found eosinophilia case: ${value} ${normalizedUnit} (${severity})`);
         }
-        
+
         return normalized;
       } catch (unitError) {
-        errors.push(createParsingError(
-          undefined,
-          'Observation.valueQuantity.unit',
-          `Unit conversion error: ${unitError instanceof Error ? unitError.message : 'Unknown error'}`,
-          'warning',
-          'Observation',
-          observation.id
-        ));
-        
+        errors.push(
+          createParsingError(
+            undefined,
+            'Observation.valueQuantity.unit',
+            `Unit conversion error: ${unitError instanceof Error ? unitError.message : 'Unknown error'}`,
+            'warning',
+            'Observation',
+            observation.id
+          )
+        );
+
         // Fallback: assume percentage if conversion fails
         return { value, unit: '%' };
       }
@@ -402,7 +439,7 @@ export class FhirParser {
    */
   private static parseDate(dateString?: string): Date | null {
     if (!dateString) return null;
-    
+
     try {
       const date = new Date(dateString);
       return isNaN(date.getTime()) ? null : date;

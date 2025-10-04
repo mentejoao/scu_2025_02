@@ -95,19 +95,19 @@ npm start
 
 ## 📝 Scripts disponíveis
 
-| Script | Descrição |
-|--------|-----------|
-| `npm test` | Executa os testes com Jest |
-| `npm run build` | Compila o TypeScript para JavaScript |
-| `npm start` | Executa a aplicação compilada |
-| `npm run start:api` | Executa a API em modo desenvolvimento |
-| `npm run db:generate` | Gera arquivos de migração do banco |
-| `npm run db:migrate` | Aplica migrações pendentes |
-| `npm run db:push` | Sincroniza o schema com o banco (desenvolvimento) |
-| `npm run db:studio` | Abre o Drizzle Studio para visualizar dados |
-| `npm run db:seed` | Popula o banco com dados de teste |
-| `npm run format:check` | Verifica formatação do código |
-| `npm run format:write` | Formata o código automaticamente |
+| Script                 | Descrição                                         |
+| ---------------------- | ------------------------------------------------- |
+| `npm test`             | Executa os testes com Jest                        |
+| `npm run build`        | Compila o TypeScript para JavaScript              |
+| `npm start`            | Executa a aplicação compilada                     |
+| `npm run start:api`    | Executa a API em modo desenvolvimento             |
+| `npm run db:generate`  | Gera arquivos de migração do banco                |
+| `npm run db:migrate`   | Aplica migrações pendentes                        |
+| `npm run db:push`      | Sincroniza o schema com o banco (desenvolvimento) |
+| `npm run db:studio`    | Abre o Drizzle Studio para visualizar dados       |
+| `npm run db:seed`      | Popula o banco com dados de teste                 |
+| `npm run format:check` | Verifica formatação do código                     |
+| `npm run format:write` | Formata o código automaticamente                  |
 
 ## 🗂️ Estrutura do Banco de Dados
 
@@ -121,7 +121,7 @@ npm start
 
 ## 🔄 Migração de mock-db para Drizzle
 
-O projeto foi migrado do sistema mock (arquivos em memória) para um banco de dados PostgreSQL real com Drizzle ORM. 
+O projeto foi migrado do sistema mock (arquivos em memória) para um banco de dados PostgreSQL real com Drizzle ORM.
 
 Se você está atualizando código existente:
 
@@ -165,4 +165,3 @@ Este é um projeto acadêmico para o Sistema de Monitoramento de Hemogramas da U
 ## 📞 Suporte
 
 Para questões e suporte, consulte a documentação do projeto ou entre em contato com a equipe de desenvolvimento.
-

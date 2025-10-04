@@ -45,7 +45,7 @@ export function createParsingError(
     reason,
     severity,
     resourceType,
-    resourceId
+    resourceId,
   };
 }
 
@@ -56,10 +56,12 @@ export function createParsingError(
 export function logParsingError(error: ParsingError): void {
   const prefix = error.severity === 'error' ? 'ERROR' : 'WARNING';
   const patientInfo = error.patientId ? `Patient ${error.patientId}: ` : '';
-  const resourceInfo = error.resourceType ? ` (${error.resourceType}${error.resourceId ? `/${error.resourceId}` : ''})` : '';
-  
+  const resourceInfo = error.resourceType
+    ? ` (${error.resourceType}${error.resourceId ? `/${error.resourceId}` : ''})`
+    : '';
+
   const message = `${prefix} - ${patientInfo}${error.field}: ${error.reason}${resourceInfo}`;
-  
+
   if (error.severity === 'error') {
     console.error(message);
   } else {

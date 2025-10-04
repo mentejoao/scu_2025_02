@@ -16,4 +16,3 @@ export default {
     ssl: false, // Disable SSL for local development
   },
 } satisfies Config;
-

@@ -17,36 +17,42 @@ async function seed() {
 
     // Seed Estados (States)
     console.log('Seeding state...');
-    await db.insert(estados).values([
-      {
-        codigo_uf: 52,
-        uf: 'GO',
-        nome: 'Goiás',
-        latitude: -15.827,
-        longitude: -49.8362,
-        regiao: 'Centro-Oeste',
-      },
-    ]).onConflictDoNothing();
+    await db
+      .insert(estados)
+      .values([
+        {
+          codigo_uf: 52,
+          uf: 'GO',
+          nome: 'Goiás',
+          latitude: -15.827,
+          longitude: -49.8362,
+          regiao: 'Centro-Oeste',
+        },
+      ])
+      .onConflictDoNothing();
 
     // Seed City (Goiânia)
     console.log('Seeding cities...');
-    await db.insert(city).values([
-      {
-        codigo_ibge: 5208707,
-        nome: 'Goiânia',
-        latitude: GOIANIA_LAT,
-        longitude: GOIANIA_LON,
-        capital: true,
-        codigo_uf: 52,
-        siafi_id: '9373',
-        ddd: 62,
-        fuso_horario: 'America/Sao_Paulo',
-      },
-    ]).onConflictDoNothing();
+    await db
+      .insert(city)
+      .values([
+        {
+          codigo_ibge: 5208707,
+          nome: 'Goiânia',
+          latitude: GOIANIA_LAT,
+          longitude: GOIANIA_LON,
+          capital: true,
+          codigo_uf: 52,
+          siafi_id: '9373',
+          ddd: 62,
+          fuso_horario: 'America/Sao_Paulo',
+        },
+      ])
+      .onConflictDoNothing();
 
     // Seed Eosinophilia Cases
     console.log('Seeding eosinophilia cases...');
-    
+
     // Clustered cases
     const mockPositiveCases = Array.from({ length: 10 }, (_, i) => ({
       id: `case_${i}`,
@@ -71,7 +77,10 @@ async function seed() {
       municipality_id: GOIANIA_MUNICIPALITY_ID,
     }));
 
-    await db.insert(eosinophiliaCases).values([...mockPositiveCases, ...mockScatteredCases]).onConflictDoNothing();
+    await db
+      .insert(eosinophiliaCases)
+      .values([...mockPositiveCases, ...mockScatteredCases])
+      .onConflictDoNothing();
 
     // Seed Geolocated Tests
     console.log('Seeding geolocated tests...');
@@ -110,4 +119,3 @@ async function seed() {
 }
 
 seed();
-

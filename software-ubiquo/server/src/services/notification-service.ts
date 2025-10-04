@@ -16,23 +16,28 @@ import * as admin from 'firebase-admin';
  * @param title O título da notificação.
  * @param body O corpo do texto da notificação.
  */
-export async function sendPushNotification(token: string, alertId: string, title: string, body: string) {
-    const message = {
-        token: token,
-        notification: {
-            title: title,
-            body: body,
-        },
-        data: {
-            alertId: alertId,
-        },
-    };
+export async function sendPushNotification(
+  token: string,
+  alertId: string,
+  title: string,
+  body: string
+) {
+  const message = {
+    token: token,
+    notification: {
+      title: title,
+      body: body,
+    },
+    data: {
+      alertId: alertId,
+    },
+  };
 
-    try {
-        console.log(`Enviando notificação para o token: ${token}`);
-        const response = await admin.messaging().send(message);
-        console.log('Notificação enviada com sucesso:', response);
-    } catch (error) {
-        console.error('Erro ao enviar notificação:', error);
-    }
+  try {
+    console.log(`Enviando notificação para o token: ${token}`);
+    const response = await admin.messaging().send(message);
+    console.log('Notificação enviada com sucesso:', response);
+  } catch (error) {
+    console.error('Erro ao enviar notificação:', error);
+  }
 }

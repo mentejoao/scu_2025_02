@@ -4,10 +4,7 @@ import { between, and, gte, lte, eq } from 'drizzle-orm';
 
 // Query functions to replace mock-db.ts
 
-export const getEosinophiliaCasesInWindow = async (
-  start: Date,
-  end: Date
-) => {
+export const getEosinophiliaCasesInWindow = async (start: Date, end: Date) => {
   console.log(
     `DB: Fetching eosinophilia cases between ${start.toISOString()} and ${end.toISOString()}`
   );
@@ -15,12 +12,7 @@ export const getEosinophiliaCasesInWindow = async (
   const cases = await db
     .select()
     .from(eosinophiliaCases)
-    .where(
-      and(
-        gte(eosinophiliaCases.test_date, start),
-        lte(eosinophiliaCases.test_date, end)
-      )
-    );
+    .where(and(gte(eosinophiliaCases.test_date, start), lte(eosinophiliaCases.test_date, end)));
 
   return cases;
 };
@@ -55,10 +47,7 @@ export const getTotalTestsInArea = async (
   return tests.length;
 };
 
-export const getBaselineForRegion = async (
-  municipality_id: string,
-  month_year: string
-) => {
+export const getBaselineForRegion = async (municipality_id: string, month_year: string) => {
   console.log(`DB: Fetching baseline for region ${municipality_id} and period ${month_year}`);
 
   const baseline = await db
@@ -85,11 +74,15 @@ export const insertGeolocatedTest = async (testData: typeof geolocatedTests.$inf
   return await db.insert(geolocatedTests).values(testData).returning();
 };
 
-export const insertRegionalBaseline = async (baselineData: typeof regionalBaselines.$inferInsert) => {
+export const insertRegionalBaseline = async (
+  baselineData: typeof regionalBaselines.$inferInsert
+) => {
   return await db.insert(regionalBaselines).values(baselineData).returning();
 };
 
-export const bulkInsertEosinophiliaCases = async (cases: (typeof eosinophiliaCases.$inferInsert)[]) => {
+export const bulkInsertEosinophiliaCases = async (
+  cases: (typeof eosinophiliaCases.$inferInsert)[]
+) => {
   if (cases.length === 0) return [];
   return await db.insert(eosinophiliaCases).values(cases).returning();
 };
@@ -98,4 +91,3 @@ export const bulkInsertGeolocatedTests = async (tests: (typeof geolocatedTests.$
   if (tests.length === 0) return [];
   return await db.insert(geolocatedTests).values(tests).returning();
 };
-

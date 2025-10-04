@@ -23,7 +23,7 @@ export const REFERENCE_RANGES = {
   '%': { min: 0, max: 5 }, // 0-5% is normal for eosinophils
   'cells/uL': { min: 0, max: 500 }, // 0-500 cells/uL
   '10*9/L': { min: 0, max: 0.5 }, // 0-0.5 x 10^9/L
-  '/uL': { min: 0, max: 500 } // Same as cells/uL
+  '/uL': { min: 0, max: 500 }, // Same as cells/uL
 };
 
 /**
@@ -33,12 +33,12 @@ export const REFERENCE_RANGES = {
 const CONVERSION_FACTORS: Record<string, number> = {
   // Percentage to percentage (no conversion)
   '%': 1,
-  
+
   // Absolute count to percentage
   // Assuming total WBC count of ~7000 cells/uL and normal eosinophil percentage of 2%
   'cells/uL': 0.014, // 1 cell/uL ≈ 0.014% (1/7000 * 100)
   '/uL': 0.014, // Same as cells/uL
-  
+
   // SI units to percentage
   '10*9/L': 14, // 1 x 10^9/L ≈ 14% (1 * 10^9 / 7 * 10^9 * 100)
   '10^9/L': 14, // Alternative notation
@@ -66,21 +66,23 @@ export function normalizeEosinophilValue(value: number, unit: string): Normalize
 
   // Normalize unit string (remove case sensitivity and common variations)
   const normalizedUnit = normalizeUnitString(unit);
-  
+
   // Check if we have a conversion factor for this unit
   const conversionFactor = CONVERSION_FACTORS[normalizedUnit];
-  
+
   if (conversionFactor === undefined) {
-    throw new Error(`Unsupported unit for eosinophil values: ${unit}. Supported units: ${Object.keys(CONVERSION_FACTORS).join(', ')}`);
+    throw new Error(
+      `Unsupported unit for eosinophil values: ${unit}. Supported units: ${Object.keys(CONVERSION_FACTORS).join(', ')}`
+    );
   }
 
   // Convert to standard unit
   const convertedValue = value * conversionFactor;
-  
+
   return {
     value: convertedValue,
     unit: STANDARD_UNIT,
-    originalUnit: unit
+    originalUnit: unit,
   };
 }
 
@@ -91,7 +93,8 @@ export function normalizeEosinophilValue(value: number, unit: string): Normalize
  */
 function normalizeUnitString(unit: string): string {
   // Convert to lowercase and remove common variations
-  let normalized = unit.toLowerCase()
+  let normalized = unit
+    .toLowerCase()
     .trim()
     .replace(/\s+/g, '') // Remove spaces
     .replace(/cells\/ul/g, 'cells/uL') // Standardize cells/uL
@@ -111,7 +114,7 @@ function normalizeUnitString(unit: string): string {
  */
 export function isEosinophilValueNormal(normalizedValue: NormalizedValue): boolean {
   const range = REFERENCE_RANGES[normalizedValue.unit as keyof typeof REFERENCE_RANGES];
-  
+
   if (!range) {
     throw new Error(`No reference range defined for unit: ${normalizedValue.unit}`);
   }
@@ -126,7 +129,7 @@ export function isEosinophilValueNormal(normalizedValue: NormalizedValue): boole
  */
 export function isEosinophilia(normalizedValue: NormalizedValue): boolean {
   const range = REFERENCE_RANGES[normalizedValue.unit as keyof typeof REFERENCE_RANGES];
-  
+
   if (!range) {
     throw new Error(`No reference range defined for unit: ${normalizedValue.unit}`);
   }
@@ -141,7 +144,9 @@ export function isEosinophilia(normalizedValue: NormalizedValue): boolean {
  * @param normalizedValue The normalized eosinophil value
  * @returns Severity level string
  */
-export function getEosinophiliaSeverity(normalizedValue: NormalizedValue): 'normal' | 'mild' | 'moderate' | 'severe' {
+export function getEosinophiliaSeverity(
+  normalizedValue: NormalizedValue
+): 'normal' | 'mild' | 'moderate' | 'severe' {
   if (!isEosinophilia(normalizedValue)) {
     return 'normal';
   }
@@ -162,23 +167,28 @@ export function getEosinophiliaSeverity(normalizedValue: NormalizedValue): 'norm
  * @param targetUnit The target unit to convert to
  * @returns Value in target unit
  */
-export function convertToUnit(normalizedValue: NormalizedValue, targetUnit: string): NormalizedValue {
+export function convertToUnit(
+  normalizedValue: NormalizedValue,
+  targetUnit: string
+): NormalizedValue {
   if (normalizedValue.unit !== STANDARD_UNIT) {
     throw new Error(`Cannot convert from non-standard unit: ${normalizedValue.unit}`);
   }
 
   const normalizedTargetUnit = normalizeUnitString(targetUnit);
   const conversionFactor = CONVERSION_FACTORS[normalizedTargetUnit];
-  
+
   if (conversionFactor === undefined) {
-    throw new Error(`Unsupported target unit: ${targetUnit}. Supported units: ${Object.keys(CONVERSION_FACTORS).join(', ')}`);
+    throw new Error(
+      `Unsupported target unit: ${targetUnit}. Supported units: ${Object.keys(CONVERSION_FACTORS).join(', ')}`
+    );
   }
 
   const convertedValue = normalizedValue.value / conversionFactor;
-  
+
   return {
     value: convertedValue,
     unit: targetUnit,
-    originalUnit: normalizedValue.unit
+    originalUnit: normalizedValue.unit,
   };
 }
