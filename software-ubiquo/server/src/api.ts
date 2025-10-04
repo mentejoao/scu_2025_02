@@ -1,9 +1,52 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { analyzeSevereAnemia } from './algorithms/individual-analysis';
+import { processFhirWebhook } from './services/fhir-service';
 import { Bloodwork } from './types/bloodwork';
+import { OperationOutcome, Bundle } from './types/fhir';
 
 const app = express();
 const port = 3000;
+
+// Middleware for parsing JSON bodies
+app.use(express.json());
+
+// TODO: refactor this later
+app.put('/fhir-webhook/Bundle/:id', async (req: Request, res: Response) => {
+  const bundleId = req.params.id;
+  console.log(`Received webhook for Bundle ID: ${bundleId}`);
+  try {
+    await processFhirWebhook(bundleId);
+
+    // Respond to HAPI to acknowledge receipt
+    const successOutcome: OperationOutcome = {
+      resourceType: 'OperationOutcome',
+      issue: [
+        {
+          severity: 'information',
+          code: 'informational',
+          diagnostics: 'Bundle received and fetched successfully',
+        },
+      ],
+    };
+    
+    res.status(200).json(successOutcome);
+  } catch (err) {
+    console.error('Error processing webhook:', err);
+    
+    const errorOutcome: OperationOutcome = {
+      resourceType: 'OperationOutcome',
+      issue: [
+        {
+          severity: 'error',
+          code: 'exception',
+          diagnostics: String(err),
+        },
+      ],
+    };
+    
+    res.status(500).json(errorOutcome);
+  }
+});
 
 // Endpoint que o app Android vai chamar
 app.get('/alert/:id', (req, res) => {
