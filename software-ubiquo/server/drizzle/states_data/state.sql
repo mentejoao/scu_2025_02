@@ -1,4 +1,4 @@
-INSERT INTO state VALUES
+INSERT INTO estados VALUES
 (11,'RO','Rondônia',-10.83,-63.34,'Norte'),
 (12,'AC','Acre',-8.77,-70.55,'Norte'),
 (13,'AM','Amazonas',-3.47,-65.1,'Norte'),

@@ -1,5 +1,6 @@
 import fhirpath from 'fhirpath';
-import { Bundle, Patient, Observation } from 'fhir/r4';
+import { Patient, Observation } from 'fhir/r4';
+import { Bundle } from '../types/fhir';
 import { NewEosinophiliaCase } from '../database/schema';
 import {
   normalizeEosinophilValue,
@@ -12,6 +13,7 @@ import {
   createParsingError,
   logParsingError,
 } from '../types/parsing-errors';
+import { findMunicipalityByCoordinates } from '../database/db';
 
 /**
  * FHIR Parser Service using FHIRPath for extracting eosinophilia case data
@@ -22,7 +24,7 @@ export class FhirParser {
    * @param bundle The FHIR Bundle resource
    * @returns Parsing result with eosinophilia cases and any errors
    */
-  static parseBundleForEosinophiliaCases(bundle: Bundle): EosinophiliaParsingResult {
+  static async parseBundleForEosinophiliaCases(bundle: Bundle): Promise<EosinophiliaParsingResult> {
     const errors: ParsingError[] = [];
 
     if (!bundle.entry || bundle.entry.length === 0) {
@@ -96,7 +98,7 @@ export class FhirParser {
 
         // Create cases for each eosinophil observation
         for (const observation of eosinophilObservations) {
-          const eosinophiliaCase = this.createEosinophiliaCase(
+          const eosinophiliaCase = await this.createEosinophiliaCase(
             patient,
             observation,
             bundle.id || 'unknown',
@@ -155,12 +157,12 @@ export class FhirParser {
    * @param errors Array to collect parsing errors
    * @returns Eosinophilia case data or null if invalid
    */
-  private static createEosinophiliaCase(
+  private static async createEosinophiliaCase(
     patient: Patient,
     observation: Observation,
     bundleId: string,
-    errors: ParsingError[]
-  ): NewEosinophiliaCase | null {
+    errors: ParsingError[] = []
+  ): Promise<NewEosinophiliaCase | null> {
     try {
       // Extract age from birth date using FHIRPath
       const age = this.calculateAge(patient.birthDate);
@@ -232,15 +234,63 @@ export class FhirParser {
       // Generate unique case ID
       const caseId = `${bundleId}-${patient.id}-${observation.id}`;
 
+      // Get coordinates from patient location
+      const latitude = location?.latitude || 0;
+      const longitude = location?.longitude || 0;
+
+      // Find municipality by coordinates using database lookup
+      let municipalityId = '0000000'; // Default fallback
+      if (latitude !== 0 && longitude !== 0) {
+        try {
+          const foundMunicipalityId = await findMunicipalityByCoordinates(latitude, longitude);
+          if (foundMunicipalityId) {
+            municipalityId = foundMunicipalityId;
+          } else {
+            errors.push(
+              createParsingError(
+                patient.id,
+                'Patient.address',
+                'Could not find municipality for coordinates, using default',
+                'warning',
+                'Patient',
+                patient.id
+              )
+            );
+          }
+        } catch (error) {
+          errors.push(
+            createParsingError(
+              patient.id,
+              'Patient.address',
+              `Error looking up municipality: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              'warning',
+              'Patient',
+              patient.id
+            )
+          );
+        }
+      } else {
+        errors.push(
+          createParsingError(
+            patient.id,
+            'Patient.address',
+            'No coordinates found, using default municipality',
+            'warning',
+            'Patient',
+            patient.id
+          )
+        );
+      }
+
       return {
         id: caseId,
         test_date: testDate,
         eosinophils_value: eosinophilsValue.value,
         age: age,
         sex: sex,
-        latitude: location?.latitude || 0,
-        longitude: location?.longitude || 0,
-        municipality_id: location?.municipality_id || '0000000', // Default municipality ID
+        latitude: latitude,
+        longitude: longitude,
+        municipality_id: municipalityId,
       };
     } catch (error) {
       const parsingError = createParsingError(
@@ -301,6 +351,7 @@ export class FhirParser {
         return null;
     }
   }
+
 
   /**
    * Extracts location data from patient address (optional for eosinophilia detection)
