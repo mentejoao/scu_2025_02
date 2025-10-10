@@ -49,7 +49,7 @@ export async function processFhirWebhook(bundleId: string): Promise<Bundle> {
     const bundle = await fetchBundle(bundleId);
 
     // Parse Bundle for eosinophilia cases
-    const parsingResult = FhirParser.parseBundleForEosinophiliaCases(bundle as any);
+    const parsingResult = await FhirParser.parseBundleForEosinophiliaCases(bundle as any);
 
     // Log any parsing errors
     if (parsingResult.errors.length > 0) {

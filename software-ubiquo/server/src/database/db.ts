@@ -1,6 +1,6 @@
 import { db } from './connection';
-import { eosinophiliaCases, geolocatedTests, regionalBaselines } from './schema';
-import { between, and, gte, lte, eq } from 'drizzle-orm';
+import { eosinophiliaCases, geolocatedTests, regionalBaselines, city } from './schema';
+import { between, and, gte, lte, eq, sql } from 'drizzle-orm';
 
 // Query functions to replace mock-db.ts
 
@@ -90,4 +90,55 @@ export const bulkInsertEosinophiliaCases = async (
 export const bulkInsertGeolocatedTests = async (tests: (typeof geolocatedTests.$inferInsert)[]) => {
   if (tests.length === 0) return [];
   return await db.insert(geolocatedTests).values(tests).returning();
+};
+
+/**
+ * Finds the closest municipality to given coordinates
+ * @param latitude Latitude coordinate
+ * @param longitude Longitude coordinate
+ * @returns Municipality ID (codigo_ibge) or null if not found
+ */
+export const findMunicipalityByCoordinates = async (
+  latitude: number,
+  longitude: number
+): Promise<string | null> => {
+  try {
+    console.log(`DB: Finding municipality for coordinates (${latitude}, ${longitude})`);
+
+    // Use Haversine formula to find the closest city
+    // This is a simplified approach - for production, consider using PostGIS with spatial indexes
+    const result = await db
+      .select({
+        codigo_ibge: city.codigo_ibge,
+        nome: city.nome,
+        distance: sql<number>`
+          (6371 * acos(
+            cos(radians(${latitude})) 
+            * cos(radians(${city.latitude})) 
+            * cos(radians(${city.longitude}) - radians(${longitude})) 
+            + sin(radians(${latitude})) 
+            * sin(radians(${city.latitude}))
+          ))
+        `,
+      })
+      .from(city)
+      .orderBy(sql`distance`)
+      .limit(1);
+
+    if (result.length > 0) {
+      const closestCity = result[0];
+      console.log(
+        `DB: Found closest municipality: ${closestCity.nome} (${closestCity.codigo_ibge}) at distance ${closestCity.distance.toFixed(2)}km`
+      );
+      
+      // Convert to string and pad with zeros if needed (IBGE codes are typically 7 digits)
+      return closestCity.codigo_ibge.toString().padStart(7, '0');
+    }
+
+    console.log('DB: No municipality found for coordinates');
+    return null;
+  } catch (error) {
+    console.error('DB: Error finding municipality by coordinates:', error);
+    return null;
+  }
 };
