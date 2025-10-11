@@ -107,22 +107,27 @@ export const findMunicipalityByCoordinates = async (
 
     // Use Haversine formula to find the closest city
     // This is a simplified approach - for production, consider using PostGIS with spatial indexes
+    // Using LEAST/GREATEST to clamp the value to [-1, 1] to handle floating-point precision issues
+    const distanceFormula = sql<number>`
+      (6371 * acos(
+        LEAST(1, GREATEST(-1,
+          cos(radians(${latitude})) 
+          * cos(radians(${city.latitude})) 
+          * cos(radians(${city.longitude}) - radians(${longitude})) 
+          + sin(radians(${latitude})) 
+          * sin(radians(${city.latitude}))
+        ))
+      ))
+    `;
+
     const result = await db
       .select({
         codigo_ibge: city.codigo_ibge,
         nome: city.nome,
-        distance: sql<number>`
-          (6371 * acos(
-            cos(radians(${latitude})) 
-            * cos(radians(${city.latitude})) 
-            * cos(radians(${city.longitude}) - radians(${longitude})) 
-            + sin(radians(${latitude})) 
-            * sin(radians(${city.latitude}))
-          ))
-        `,
+        distance: distanceFormula,
       })
       .from(city)
-      .orderBy(sql`distance`)
+      .orderBy(distanceFormula)
       .limit(1);
 
     if (result.length > 0) {
