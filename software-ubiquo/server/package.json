@@ -30,7 +30,9 @@
     "docker:dev:db:migrate": "docker compose -f docker-compose.dev.yml exec backend-dev pnpm run db:migrate",
     "docker:dev:db:seed": "docker compose -f docker-compose.dev.yml exec backend-dev pnpm run db:seed",
     "docker:dev:up": "docker compose -f docker-compose.dev.yml up -d",
-    "docker:dev:down": "docker compose -f docker-compose.dev.yml down"
+    "docker:dev:down": "docker compose -f docker-compose.dev.yml down",
+    "docker:dev:logs": "docker compose -f docker-compose.dev.yml logs -f",
+    "docker:dev:restart": "docker compose -f docker-compose.dev.yml restart"
   },
   "keywords": [],
   "author": "",
