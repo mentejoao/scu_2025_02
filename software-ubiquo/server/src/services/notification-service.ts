@@ -2,12 +2,12 @@ import * as admin from 'firebase-admin';
 
 // Carrega as credenciais da conta de serviço
 // O caminho é relativo à raiz do projeto onde o node é executado
-// const serviceAccount = require('../../serviceAccountKey.json'); // Don't commit
+const serviceAccount = require('../../serviceAccountKey.json');
 
 // Inicializa o Firebase Admin SDK
-// admin.initializeApp({
-//     credential: admin.credential.cert(serviceAccount) // Don't commit
-// });
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
 
 /**
  * Envia uma notificação push para um dispositivo específico.

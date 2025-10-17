@@ -30,19 +30,14 @@ export function analyzeSevereAnemia(bloodwork: Bloodwork): IndividualAlert | nul
 
     // TODO: Substituir pelo token real do médico responsável por este paciente.
     const placeholderDoctorToken =
-      'd_x-qptvTN6wbUy146HUjc:APA91bGbQqYn72DIV7DDnTYCFB1ZjgyGYhFlypj1SaTdl76dY_y97dxSik7wQTfRVg5Wv7MIISWLwWaE9q3bfrcKt3ZP1jGenpIhg2KSDhrc76nt0cqrCaI';
+      'dwNNV6rTTr2GIwmdzzjZra:APA91bEoPMgiVOG-UzeR8wgjjyUplSiUoR_ZPTODBi5QUpMSLmsveubJXEeI6BipvtonHBXkAmJFGPHZ9YpQh5yK73SsTDLLfzt2lFItdiWzFV5yHsiqMVs';
 
-    if (
-      placeholderDoctorToken !==
-      'd_x-qptvTN6wbUy146HUjc:APA91bGbQqYn72DIV7DDnTYCFB1ZjgyGYhFlypj1SaTdl76dY_y97dxSik7wQTfRVg5Wv7MIISWLwWaE9q3bfrcKt3ZP1jGenpIhg2KSDhrc76nt0cqrCaI'
-    ) {
-      sendPushNotification(
-        placeholderDoctorToken,
-        alert.patient_cpf, // Usando o CPF como um ID de alerta único
-        'Alerta de Anemia Severa',
-        `Paciente ${bloodwork.patient.name} apresenta hemoglobina em ${bloodwork.hemoglobin.value} g/dL.`
-      );
-    }
+    sendPushNotification(
+      placeholderDoctorToken,
+      alert.patient_cpf, // Usando o CPF como um ID de alerta único
+      'Alerta de Anemia Severa',
+      `Paciente ${bloodwork.patient.name} apresenta hemoglobina em ${bloodwork.hemoglobin.value} g/dL.`
+    );
 
     return alert;
   }
