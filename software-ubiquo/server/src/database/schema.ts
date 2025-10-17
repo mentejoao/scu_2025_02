@@ -9,7 +9,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 // Estados (States) table
-export const estados = pgTable('state', {
+export const estados = pgTable('estados', {
   codigo_uf: integer('codigo_uf').primaryKey().notNull(),
   uf: varchar('uf', { length: 2 }).notNull(),
   nome: varchar('nome', { length: 100 }).notNull(),
