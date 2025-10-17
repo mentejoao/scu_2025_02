@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import { analyzeSevereAnemia } from './algorithms/individual-analysis';
+import { analyzeParasitosisOutbreak } from './algorithms/collective-analysis';
 import { processFhirWebhook } from './services/fhir-service';
 import { Bloodwork } from './types/bloodwork';
 import { OperationOutcome, Bundle } from './types/fhir';
@@ -96,6 +97,28 @@ app.get('/test-anemia-alert', (req, res) => {
     res.send('Análise de anemia acionada. Verifique seu dispositivo para uma notificação.');
   } else {
     res.send('Análise de anemia acionada, mas nenhum alerta foi gerado.');
+  }
+});
+
+// Endpoint para testar o envio de notificação de surto de parasitose
+app.get('/test-parasitosis-outbreak', async (req, res) => {
+  console.log('\n--- ACIONANDO TESTE DE ALERTA DE SURTO DE PARASITOSE ---');
+  try {
+    const alerts = await analyzeParasitosisOutbreak();
+    if (alerts.length > 0) {
+      res.status(200).json({
+        message: `${alerts.length} surto(s) de parasitose confirmado(s). Verifique os logs e seu dispositivo para notificações.`,
+        alerts: alerts,
+      });
+    } else {
+      res.status(200).json({
+        message: 'Análise de surto de parasitose acionada, mas nenhum surto foi confirmado.',
+        alerts: [],
+      });
+    }
+  } catch (error) {
+    console.error('Erro ao testar o alerta de surto de parasitose:', error);
+    res.status(500).send('Erro ao processar a análise de surto de parasitose.');
   }
 });
 
