@@ -49,6 +49,44 @@ const dbRegionalBaselines: RegionalBaseline[] = [
   },
 ];
 
+// --- MOCK ALERT DETAILS --- //
+
+export interface MockAlertDetails {
+  id: string;
+  title: string;
+  description: string;
+  severity: string;
+  timestamp: number;
+}
+
+const mockAlerts: { [key: string]: MockAlertDetails } = {
+  "outbreak-5208707-16659": {
+    id: "outbreak-5208707-16659",
+    title: "Alerta de Surto de Parasitose",
+    description: "Foi detectado um surto de parasitose na região de Goiânia. Por favor, verifique os detalhes e tome as medidas cabíveis.",
+    severity: "Alta",
+    timestamp: Date.now(),
+  },
+  "111.222.333-44": {
+    id: "111.222.333-44",
+    title: "Alerta de Anemia Severa",
+    description: "O paciente João da Silva (CPF: 111.222.333-44) apresenta níveis de hemoglobina muito baixos, indicando anemia severa. Recomenda-se intervenção imediata.",
+    severity: "Média",
+    timestamp: Date.now(),
+  },
+  "default-alert": {
+    id: "default-alert",
+    title: "Alerta Genérico",
+    description: "Este é um alerta genérico. Detalhes adicionais podem ser encontrados no sistema.",
+    severity: "Baixa",
+    timestamp: Date.now(),
+  },
+};
+
+export const getMockAlertDetails = (alertId: string): MockAlertDetails | undefined => {
+  return mockAlerts[alertId];
+};
+
 // --- MOCK ASYNC FUNCTIONS --- //
 
 export const getEosinophiliaCasesInWindow = async (

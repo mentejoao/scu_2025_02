@@ -24,7 +24,7 @@ class AlertViewModel : ViewModel() {
         private set
 
     // Função para buscar os detalhes do alerta
-    fun fetchAlertDetails(alertId: String) {
+    fun fetchAlertDetails(alertId: String, alertType: String) {
         viewModelScope.launch {
             uiState = AlertUiState.Loading
             try {

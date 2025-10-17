@@ -28,17 +28,19 @@ class PushNotificationService : FirebaseMessagingService() {
         val body = remoteMessage.notification?.body
         // Assumindo que o backend envia o ID do alerta no campo 'data' da notificação
         val alertId = remoteMessage.data["alertId"]
+        val alertType = remoteMessage.data["alertType"]
 
-        if (alertId != null && title != null && body != null) {
-            sendNotification(title, body, alertId)
+        if (alertId != null && alertType != null && title != null && body != null) {
+            sendNotification(title, body, alertId, alertType)
         }
     }
 
-    private fun sendNotification(title: String, body: String, alertId: String) {
+    private fun sendNotification(title: String, body: String, alertId: String, alertType: String) {
         // 1. Criar um Intent para abrir a MainActivity
         val intent = Intent(this, MainActivity::class.java).apply {
             // Adiciona o ID do alerta como um "extra" para a MainActivity poder ler
             putExtra(MainActivity.ALERT_ID_EXTRA, alertId)
+            putExtra(MainActivity.ALERT_TYPE_EXTRA, alertType)
             // Flags para gerenciar a pilha de atividades
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
