@@ -18,7 +18,7 @@ admin.initializeApp({
  */
 export async function sendPushNotification(
   token: string,
-  alertId: string,
+  data: { [key: string]: string },
   title: string,
   body: string
 ) {
@@ -28,9 +28,7 @@ export async function sendPushNotification(
       title: title,
       body: body,
     },
-    data: {
-      alertId: alertId,
-    },
+    data: data,
   };
 
   try {

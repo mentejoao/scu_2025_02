@@ -1,11 +1,13 @@
 import { DBSCAN } from 'density-clustering';
 import { CollectiveAlert } from '../types/alerts';
+// Change to ../database/db
 import {
   getBaselineForRegion,
   getEosinophiliaCasesInWindow,
   getTotalTestsInArea,
-} from '../database/db';
-import { EosinophiliaCase } from '../database/schema';
+} from '../database/mock-db';
+// Change to ../database/schema
+import { EosinophiliaCase } from '../database/types';
 import { sendPushNotification } from '../services/notification-service';
 
 // --- Helper Functions ---
@@ -116,8 +118,10 @@ export async function analyzeParasitosisOutbreak(): Promise<CollectiveAlert[]> {
     if (observedRate > outbreakThreshold) {
       console.log(`COLLECTIVE ALERT: Outbreak confirmed for region ${municipality_id}!`);
       const demographics = getDemographics(clusterCases);
+      const alertId = `outbreak-${municipality_id}-${Date.now()}`;
 
       const alert: CollectiveAlert = {
+        id: alertId,
         type: 'PARASITOSIS_OUTBREAK',
         alert_date: new Date(),
         location: {
@@ -144,9 +148,14 @@ export async function analyzeParasitosisOutbreak(): Promise<CollectiveAlert[]> {
       const placeholderManagerToken =
         'dwNNV6rTTr2GIwmdzzjZra:APA91bEoPMgiVOG-UzeR8wgjjyUplSiUoR_ZPTODBi5QUpMSLmsveubJXEeI6BipvtonHBXkAmJFGPHZ9YpQh5yK73SsTDLLfzt2lFItdiWzFV5yHsiqMVs';
 
+      const data = {
+        alertType: 'PARASITOSIS_OUTBREAK',
+        alertId: alert.id,
+      };
+
       sendPushNotification(
         placeholderManagerToken,
-        alert.location.municipality_id, // Usando o ID do município como ID do alerta
+        data,
         'Alerta de Surto de Parasitose',
         `Surto confirmado na região ${alert.location.municipality_id} com ${alert.statistics.case_count} casos.`
       );

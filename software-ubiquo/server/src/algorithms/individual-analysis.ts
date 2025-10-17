@@ -32,9 +32,14 @@ export function analyzeSevereAnemia(bloodwork: Bloodwork): IndividualAlert | nul
     const placeholderDoctorToken =
       'dwNNV6rTTr2GIwmdzzjZra:APA91bEoPMgiVOG-UzeR8wgjjyUplSiUoR_ZPTODBi5QUpMSLmsveubJXEeI6BipvtonHBXkAmJFGPHZ9YpQh5yK73SsTDLLfzt2lFItdiWzFV5yHsiqMVs';
 
+    const data = {
+      alertType: 'SEVERE_ANEMIA',
+      alertId: alert.patient_cpf,
+    };
+
     sendPushNotification(
       placeholderDoctorToken,
-      alert.patient_cpf, // Usando o CPF como um ID de alerta único
+      data, // Usando o CPF como um ID de alerta único
       'Alerta de Anemia Severa',
       `Paciente ${bloodwork.patient.name} apresenta hemoglobina em ${bloodwork.hemoglobin.value} g/dL.`
     );

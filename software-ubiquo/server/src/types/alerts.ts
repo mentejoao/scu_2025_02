@@ -10,6 +10,7 @@ export interface IndividualAlert {
 }
 
 export interface CollectiveAlert {
+  id: string;
   type: 'PARASITOSIS_OUTBREAK';
   alert_date: Date;
   location: {
