@@ -15,8 +15,8 @@
               {
                 "url": "http://hl7.org/fhir/StructureDefinition/geolocation",
                 "extension": [
-                  { "url": "latitude", "valueDecimal": -23.5505 },
-                  { "url": "longitude", "valueDecimal": -46.6333 }
+                  { "url": "latitude", "valueDecimal": -16.7573 },
+                  { "url": "longitude", "valueDecimal": -49.4412 }
                 ]
               }
             ]
