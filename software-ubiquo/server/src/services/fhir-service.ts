@@ -6,7 +6,7 @@ import { bulkInsertEosinophiliaCases } from '../database/db';
  * Service for interacting with FHIR server
  */
 
-const FHIR_BASE_URL = process.env.FHIR_BASE_URL || 'http://localhost:8080/fhir';
+const FHIR_BASE_URL = process.env.FHIR_BASE_URL || 'http://localhost:8080';
 
 /**
  * Fetches a Bundle resource from the FHIR server
@@ -15,7 +15,7 @@ const FHIR_BASE_URL = process.env.FHIR_BASE_URL || 'http://localhost:8080/fhir';
  * @throws Error if the fetch fails
  */
 export async function fetchBundle(bundleId: string): Promise<Bundle> {
-  const fhirUrl = `${FHIR_BASE_URL}/Bundle/${bundleId}`;
+  const fhirUrl = `${FHIR_BASE_URL}/fhir/Bundle/${bundleId}`;
 
   console.log(`Fetching Bundle from FHIR server: ${fhirUrl}`);
 
