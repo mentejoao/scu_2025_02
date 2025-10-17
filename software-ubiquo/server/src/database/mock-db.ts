@@ -60,8 +60,8 @@ export interface MockAlertDetails {
 }
 
 const mockAlerts: { [key: string]: MockAlertDetails } = {
-  "outbreak-5208707-16659": {
-    id: "outbreak-5208707-16659",
+  "outbreak-5208707": {
+    id: "outbreak-5208707",
     title: "Alerta de Surto de Parasitose",
     description: "Foi detectado um surto de parasitose na região de Goiânia. Por favor, verifique os detalhes e tome as medidas cabíveis.",
     severity: "Alta",
