@@ -63,6 +63,17 @@ export const regionalBaselines = pgTable('regional_baselines', {
   rate_standard_deviation: doublePrecision('rate_standard_deviation').notNull(),
 });
 
+// Alerts table
+export const alerts = pgTable('alerts', {
+  id: varchar('id', { length: 255 }).primaryKey(),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: varchar('description', { length: 1000 }).notNull(),
+  severity: varchar('severity', { length: 20 }).notNull(), // 'Alta', 'Média', 'Baixa'
+  timestamp: timestamp('timestamp', { withTimezone: true }).notNull(),
+  municipality_id: varchar('municipality_id', { length: 10 }), // Optional: can be null for general alerts
+  alert_type: varchar('alert_type', { length: 50 }).notNull(), // 'outbreak', 'individual', 'generic'
+});
+
 // Export types for use in the application
 export type Estado = typeof estados.$inferSelect;
 export type NewEstado = typeof estados.$inferInsert;
@@ -78,3 +89,6 @@ export type NewEosinophiliaCase = typeof eosinophiliaCases.$inferInsert;
 
 export type RegionalBaseline = typeof regionalBaselines.$inferSelect;
 export type NewRegionalBaseline = typeof regionalBaselines.$inferInsert;
+
+export type Alert = typeof alerts.$inferSelect;
+export type NewAlert = typeof alerts.$inferInsert;

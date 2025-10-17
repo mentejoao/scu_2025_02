@@ -23,3 +23,13 @@ export interface RegionalBaseline {
   expected_rate_per_1000_tests: number;
   rate_standard_deviation: number;
 }
+
+export interface Alert {
+  id: string;
+  title: string;
+  description: string;
+  severity: 'Alta' | 'Média' | 'Baixa';
+  timestamp: Date;
+  municipality_id?: string | null;
+  alert_type: 'outbreak' | 'individual' | 'generic';
+}

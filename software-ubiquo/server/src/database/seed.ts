@@ -1,5 +1,5 @@
 import { db } from './connection';
-import { eosinophiliaCases, geolocatedTests, regionalBaselines, city, estados } from './schema';
+import { eosinophiliaCases, geolocatedTests, regionalBaselines, city, estados, alerts } from './schema';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -108,6 +108,40 @@ async function seed() {
         rate_standard_deviation: 1.5,
       },
     ]);
+
+    // Seed Alerts
+    console.log('Seeding alerts...');
+    const mockAlerts = [
+      {
+        id: "outbreak-5208707",
+        title: "Alerta de Surto de Parasitose",
+        description: "Foi detectado um surto de parasitose na região de Goiânia. Por favor, verifique os detalhes e tome as medidas cabíveis.",
+        severity: "Alta" as const,
+        timestamp: new Date(),
+        municipality_id: GOIANIA_MUNICIPALITY_ID,
+        alert_type: "outbreak" as const,
+      },
+      {
+        id: "111.222.333-44",
+        title: "Alerta de Anemia Severa",
+        description: "O paciente João da Silva (CPF: 111.222.333-44) apresenta níveis de hemoglobina muito baixos, indicando anemia severa. Recomenda-se intervenção imediata.",
+        severity: "Média" as const,
+        timestamp: new Date(),
+        municipality_id: null,
+        alert_type: "individual" as const,
+      },
+      {
+        id: "default-alert",
+        title: "Alerta Genérico",
+        description: "Este é um alerta genérico. Detalhes adicionais podem ser encontrados no sistema.",
+        severity: "Baixa" as const,
+        timestamp: new Date(),
+        municipality_id: null,
+        alert_type: "generic" as const,
+      },
+    ];
+
+    await db.insert(alerts).values(mockAlerts).onConflictDoNothing();
 
     console.log('✅ Database seeded successfully!');
   } catch (error) {

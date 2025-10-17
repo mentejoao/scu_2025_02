@@ -1,5 +1,5 @@
 import { db } from './connection';
-import { eosinophiliaCases, geolocatedTests, regionalBaselines, city } from './schema';
+import { eosinophiliaCases, geolocatedTests, regionalBaselines, city, alerts } from './schema';
 import { between, and, gte, lte, eq, sql } from 'drizzle-orm';
 
 // Query functions to replace mock-db.ts
@@ -145,5 +145,164 @@ export const findMunicipalityByCoordinates = async (
   } catch (error) {
     console.error('DB: Error finding municipality by coordinates:', error);
     return null;
+  }
+};
+
+// --- ALERT FUNCTIONS --- //
+
+/**
+ * Get alert details by ID
+ * @param alertId The alert ID to fetch
+ * @returns Alert details or null if not found
+ */
+export const getAlertDetails = async (alertId: string) => {
+  try {
+    console.log(`DB: Fetching alert details for ID: ${alertId}`);
+    
+    const result = await db
+      .select()
+      .from(alerts)
+      .where(eq(alerts.id, alertId))
+      .limit(1);
+
+    if (result.length > 0) {
+      const alert = result[0];
+      console.log(`DB: Found alert: ${alert.title}`);
+      return alert;
+    }
+
+    console.log(`DB: No alert found with ID: ${alertId}`);
+    return null;
+  } catch (error) {
+    console.error('DB: Error fetching alert details:', error);
+    return null;
+  }
+};
+
+/**
+ * Get all alerts, optionally filtered by municipality
+ * @param municipalityId Optional municipality ID to filter by
+ * @returns Array of alerts
+ */
+export const getAllAlerts = async (municipalityId?: string) => {
+  try {
+    console.log(`DB: Fetching all alerts${municipalityId ? ` for municipality: ${municipalityId}` : ''}`);
+    
+    const result = municipalityId 
+      ? await db
+          .select()
+          .from(alerts)
+          .where(eq(alerts.municipality_id, municipalityId))
+          .orderBy(sql`${alerts.timestamp} DESC`)
+      : await db
+          .select()
+          .from(alerts)
+          .orderBy(sql`${alerts.timestamp} DESC`);
+    
+    console.log(`DB: Found ${result.length} alerts`);
+    return result;
+  } catch (error) {
+    console.error('DB: Error fetching alerts:', error);
+    return [];
+  }
+};
+
+/**
+ * Insert a new alert
+ * @param alertData Alert data to insert
+ * @returns Inserted alert or null if failed
+ */
+export const insertAlert = async (alertData: typeof alerts.$inferInsert) => {
+  try {
+    console.log(`DB: Inserting new alert: ${alertData.title}`);
+    
+    const result = await db.insert(alerts).values(alertData).returning();
+    
+    if (result.length > 0) {
+      console.log(`DB: Successfully inserted alert with ID: ${result[0].id}`);
+      return result[0];
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('DB: Error inserting alert:', error);
+    return null;
+  }
+};
+
+/**
+ * Update an existing alert
+ * @param alertId Alert ID to update
+ * @param alertData Updated alert data
+ * @returns Updated alert or null if not found
+ */
+export const updateAlert = async (alertId: string, alertData: Partial<typeof alerts.$inferInsert>) => {
+  try {
+    console.log(`DB: Updating alert: ${alertId}`);
+    
+    const result = await db
+      .update(alerts)
+      .set(alertData)
+      .where(eq(alerts.id, alertId))
+      .returning();
+    
+    if (result.length > 0) {
+      console.log(`DB: Successfully updated alert: ${alertId}`);
+      return result[0];
+    }
+    
+    console.log(`DB: No alert found to update with ID: ${alertId}`);
+    return null;
+  } catch (error) {
+    console.error('DB: Error updating alert:', error);
+    return null;
+  }
+};
+
+/**
+ * Delete an alert
+ * @param alertId Alert ID to delete
+ * @returns True if deleted, false otherwise
+ */
+export const deleteAlert = async (alertId: string): Promise<boolean> => {
+  try {
+    console.log(`DB: Deleting alert: ${alertId}`);
+    
+    const result = await db
+      .delete(alerts)
+      .where(eq(alerts.id, alertId))
+      .returning();
+    
+    if (result.length > 0) {
+      console.log(`DB: Successfully deleted alert: ${alertId}`);
+      return true;
+    }
+    
+    console.log(`DB: No alert found to delete with ID: ${alertId}`);
+    return false;
+  } catch (error) {
+    console.error('DB: Error deleting alert:', error);
+    return false;
+  }
+};
+
+/**
+ * Bulk insert alerts
+ * @param alertsData Array of alert data to insert
+ * @returns Array of inserted alerts
+ */
+export const bulkInsertAlerts = async (alertsData: (typeof alerts.$inferInsert)[]) => {
+  try {
+    if (alertsData.length === 0) return [];
+    
+    console.log(`DB: Bulk inserting ${alertsData.length} alerts`);
+    
+    const result = await db.insert(alerts).values(alertsData).returning();
+    
+    console.log(`DB: Successfully bulk inserted ${result.length} alerts`);
+    return result;
+  } catch (error) {
+    console.error('DB: Error bulk inserting alerts:', error);
+    return [];
   }
 };
