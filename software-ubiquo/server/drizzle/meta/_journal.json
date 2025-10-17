@@ -8,6 +8,34 @@
       "when": 1759535954192,
       "tag": "0000_oval_the_leader",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1759535954193,
+      "tag": "0001_rename_estados_to_states",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1759535954194,
+      "tag": "0002_rename_states_to_state",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1759535954195,
+      "tag": "0003_populate_states_and_cities",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1759535954196,
+      "tag": "0004_rename_state_to_estados",
+      "breakpoints": true
     }
   ]
 }

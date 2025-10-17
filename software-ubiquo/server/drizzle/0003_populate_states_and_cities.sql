@@ -1973,7 +1973,6 @@ INSERT INTO city VALUES
 (5208509,'Goiandira',-18.1352,-48.0875,FALSE,52,'9369',64,'America/Sao_Paulo'),
 (5208608,'Goianésia',-15.3118,-49.1162,FALSE,52,'9371',62,'America/Sao_Paulo'),
 (1503093,'Goianésia do Pará',-3.84338,-49.0974,FALSE,15,'0627',94,'America/Sao_Paulo'),
-(5208707,'Goiânia',-16.6864,-49.2643,TRUE,52,'9373',62,'America/Sao_Paulo'),
 (2404200,'Goianinha',-6.26486,-35.1943,FALSE,24,'1681',84,'America/Sao_Paulo'),
 (5208806,'Goianira',-16.4947,-49.427,FALSE,52,'9375',62,'America/Sao_Paulo'),
 (1708304,'Goianorte',-8.77413,-48.9313,FALSE,17,'9699',63,'America/Sao_Paulo'),
