@@ -1,9 +1,9 @@
 import { analyzeParasitosisOutbreak } from '../collective-analysis';
-import { EosinophiliaCase, RegionalBaseline } from '../../database/types';
-import * as mockDb from '../../database/mock-db';
+import { EosinophiliaCase, RegionalBaseline } from '../../database/schema';
+import * as mockDb from '../../database/db';
 
 // Mock the entire database module
-jest.mock('../../database/mock-db');
+jest.mock('../../database/db');
 
 // Type-safe mock functions
 const mockedGetEosinophiliaCasesInWindow = jest.mocked(mockDb.getEosinophiliaCasesInWindow);
@@ -17,6 +17,7 @@ describe('analyzeParasitosisOutbreak', () => {
   });
 
   const mockBaseline: RegionalBaseline = {
+    id: 1,
     region_id: '5208707',
     month_year: new Date().toISOString().slice(0, 7),
     expected_rate_per_1000_tests: 10.0,

@@ -1,0 +1,49 @@
+{
+  "resourceType": "Bundle",
+  "id": "bundle-123",
+  "type": "collection",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "patient-001",
+        "gender": "male",
+        "birthDate": "1985-03-15",
+        "address": [
+          {
+            "extension": [
+              {
+                "url": "http://hl7.org/fhir/StructureDefinition/geolocation",
+                "extension": [
+                  { "url": "latitude", "valueDecimal": -23.5505 },
+                  { "url": "longitude", "valueDecimal": -46.6333 }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "eosinophils-001",
+        "code": {
+          "coding": [
+            {
+              "code": "770-0",
+              "display": "Eosinophils"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/patient-001"
+        },
+        "effectiveDateTime": "2024-01-15T10:30:00Z",
+        "valueQuantity": {
+          "value": 800
+        }
+      }
+    }
+  ]
+}
