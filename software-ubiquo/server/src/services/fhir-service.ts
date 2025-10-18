@@ -1,6 +1,7 @@
 import { Bundle } from '../types/fhir';
 import { FhirParser } from './fhir-parser';
 import { bulkInsertEosinophiliaCases } from '../database/db';
+import { analyzeSevereAnemia } from '../algorithms/individual-analysis';
 
 /**
  * Service for interacting with FHIR server
@@ -49,29 +50,50 @@ export async function processFhirWebhook(bundleId: string): Promise<Bundle> {
     const bundle = await fetchBundle(bundleId);
 
     // Parse Bundle for eosinophilia cases
-    const parsingResult = await FhirParser.parseBundleForEosinophiliaCases(bundle as any);
+    const eosinophiliaResult = await FhirParser.parseBundleForEosinophiliaCases(bundle as any);
 
-    // Log any parsing errors
-    if (parsingResult.errors.length > 0) {
-      console.log(`Found ${parsingResult.errors.length} parsing issues:`);
-      parsingResult.errors.forEach((error) => {
+    // Log any parsing errors for eosinophilia
+    if (eosinophiliaResult.errors.length > 0) {
+      console.log(`Found ${eosinophiliaResult.errors.length} eosinophilia parsing issues:`);
+      eosinophiliaResult.errors.forEach((error) => {
         const severity = error.severity === 'error' ? 'ERROR' : 'WARNING';
         console.log(`  ${severity}: ${error.field} - ${error.reason}`);
       });
     }
 
-    if (parsingResult.cases.length > 0) {
-      console.log(`Found ${parsingResult.cases.length} eosinophilia cases to save`);
+    if (eosinophiliaResult.cases.length > 0) {
+      console.log(`Found ${eosinophiliaResult.cases.length} eosinophilia cases to save`);
 
       // Save cases to database
-      const savedCases = await bulkInsertEosinophiliaCases(parsingResult.cases);
+      const savedCases = await bulkInsertEosinophiliaCases(eosinophiliaResult.cases);
       console.log(`Successfully saved ${savedCases.length} eosinophilia cases to database`);
 
       // TODO: Trigger analysis algorithms for new cases
-      // - analyzeSevereAnemia for individual cases
       // - analyzeParasitosisOutbreak for collective analysis
     } else {
       console.log('No eosinophilia cases found in Bundle');
+    }
+
+    // Parse Bundle for anemia cases
+    const anemiaCases = await FhirParser.parseBundleForAnemiaCases(bundle as any);
+
+    if (anemiaCases.length > 0) {
+      console.log(`Found ${anemiaCases.length} anemia cases to analyze`);
+
+      // Process each anemia case for individual analysis
+      for (const bloodwork of anemiaCases) {
+        console.log(`Analyzing anemia case for patient ${bloodwork.patient.cpf}`);
+        
+        const alert = analyzeSevereAnemia(bloodwork);
+        
+        if (alert) {
+          console.log(`ANEMIA ALERT: Severe anemia detected for patient ${bloodwork.patient.cpf} (Hb: ${bloodwork.hemoglobin.value} g/dL)`);
+        } else {
+          console.log(`No anemia alert for patient ${bloodwork.patient.cpf} (Hb: ${bloodwork.hemoglobin.value} g/dL)`);
+        }
+      }
+    } else {
+      console.log('No anemia cases found in Bundle');
     }
 
     return bundle;

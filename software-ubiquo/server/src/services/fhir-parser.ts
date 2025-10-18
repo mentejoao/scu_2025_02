@@ -2,6 +2,7 @@ import fhirpath from 'fhirpath';
 import { Patient, Observation } from 'fhir/r4';
 import { Bundle } from '../types/fhir';
 import { NewEosinophiliaCase } from '../database/schema';
+import { Bloodwork } from '../types/bloodwork';
 import {
   normalizeEosinophilValue,
   isEosinophilia,
@@ -19,6 +20,112 @@ import { findMunicipalityByCoordinates } from '../database/db';
  * FHIR Parser Service using FHIRPath for extracting eosinophilia case data
  */
 export class FhirParser {
+  /**
+   * Parses a FHIR Bundle to extract anemia case data using FHIRPath
+   * @param bundle The FHIR Bundle resource
+   * @returns Array of Bloodwork objects for anemia analysis
+   */
+  static async parseBundleForAnemiaCases(bundle: Bundle): Promise<Bloodwork[]> {
+    const bloodworkCases: Bloodwork[] = [];
+    const errors: ParsingError[] = [];
+
+    if (!bundle.entry || bundle.entry.length === 0) {
+      errors.push(
+        createParsingError(
+          undefined,
+          'Bundle.entry',
+          'Bundle has no entries to process',
+          'warning',
+          'Bundle',
+          bundle.id
+        )
+      );
+      return bloodworkCases;
+    }
+
+    try {
+      // Extract all patients using FHIRPath
+      const patients = fhirpath.evaluate(
+        bundle,
+        "Bundle.entry.resource.where(resourceType='Patient')"
+      ) as Patient[];
+
+      if (patients.length === 0) {
+        errors.push(
+          createParsingError(
+            undefined,
+            'Bundle.entry.resource',
+            'No Patient resources found in Bundle',
+            'warning',
+            'Bundle',
+            bundle.id
+          )
+        );
+        return bloodworkCases;
+      }
+
+      // Process each patient
+      for (const patient of patients) {
+        if (!patient.id) {
+          errors.push(
+            createParsingError(
+              undefined,
+              'Patient.id',
+              'Patient resource missing ID',
+              'error',
+              'Patient'
+            )
+          );
+          continue;
+        }
+
+        // Find anemia-related observations for this patient
+        const anemiaObservations = this.findAllAnemiaObservations(bundle, patient.id);
+
+        if (anemiaObservations.length === 0) {
+          errors.push(
+            createParsingError(
+              patient.id,
+              'Observation',
+              'No anemia-related observations found for patient',
+              'warning',
+              'Patient',
+              patient.id
+            )
+          );
+          continue;
+        }
+
+        // Create bloodwork case for anemia analysis
+        const bloodworkCase = await this.createAnemiaCase(
+          patient,
+          anemiaObservations,
+          bundle.id || 'unknown',
+          errors
+        );
+
+        if (bloodworkCase) {
+          bloodworkCases.push(bloodworkCase);
+        }
+      }
+
+      console.log(`Parsed ${bloodworkCases.length} anemia cases from Bundle using FHIRPath`);
+      return bloodworkCases;
+    } catch (error) {
+      const parsingError = createParsingError(
+        undefined,
+        'Bundle',
+        `Failed to parse Bundle for anemia cases: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'error',
+        'Bundle',
+        bundle.id
+      );
+      errors.push(parsingError);
+      logParsingError(parsingError);
+      return bloodworkCases;
+    }
+  }
+
   /**
    * Parses a FHIR Bundle to extract eosinophilia case data using FHIRPath
    * @param bundle The FHIR Bundle resource
@@ -129,6 +236,28 @@ export class FhirParser {
   }
 
   /**
+   * Finds all anemia-related observations for a patient using FHIRPath
+   * @param bundle FHIR Bundle containing observations
+   * @param patientId Patient ID to search for
+   * @returns Array of anemia-related observations (hemoglobin, hematocrit, MCV)
+   */
+  private static findAllAnemiaObservations(bundle: Bundle, patientId: string): Observation[] {
+    try {
+      // FHIRPath query to find all anemia-related observations for a specific patient
+      // LOINC codes: 718-7 (hemoglobin), 4544-3 (hematocrit), 787-2 (MCV)
+      const observations = fhirpath.evaluate(
+        bundle,
+        `Bundle.entry.resource.where(resourceType='Observation' and subject.reference='Patient/${patientId}' and (code.coding.code='718-7' or code.coding.code='4544-3' or code.coding.code='787-2'))`
+      ) as Observation[];
+
+      return observations;
+    } catch (error) {
+      console.error(`Error finding anemia observations for patient ${patientId}:`, error);
+      return [];
+    }
+  }
+
+  /**
    * Finds all eosinophil observations for a patient using FHIRPath
    * @param bundle FHIR Bundle containing observations
    * @param patientId Patient ID to search for
@@ -146,6 +275,192 @@ export class FhirParser {
     } catch (error) {
       console.error(`Error finding eosinophil observations for patient ${patientId}:`, error);
       return [];
+    }
+  }
+
+  /**
+   * Creates an anemia case from patient and observations data
+   * @param patient Patient resource
+   * @param observations Array of anemia-related observations (hemoglobin, hematocrit, MCV)
+   * @param bundleId Bundle ID for generating unique case ID
+   * @param errors Array to collect parsing errors
+   * @returns Bloodwork object for anemia analysis or null if invalid
+   */
+  private static async createAnemiaCase(
+    patient: Patient,
+    observations: Observation[],
+    bundleId: string,
+    errors: ParsingError[] = []
+  ): Promise<Bloodwork | null> {
+    try {
+      // Extract age from birth date using FHIRPath
+      const age = this.calculateAge(patient.birthDate);
+      if (age === null) {
+        const error = createParsingError(
+          patient.id,
+          'Patient.birthDate',
+          'Could not calculate age from birth date',
+          'error',
+          'Patient',
+          patient.id
+        );
+        errors.push(error);
+        logParsingError(error);
+        return null;
+      }
+
+      // Extract gender using FHIRPath
+      const sex = this.mapGenderToSex(patient.gender);
+      if (!sex) {
+        const error = createParsingError(
+          patient.id,
+          'Patient.gender',
+          'Could not determine sex from gender',
+          'error',
+          'Patient',
+          patient.id
+        );
+        errors.push(error);
+        logParsingError(error);
+        return null;
+      }
+
+      // Extract location coordinates
+      const location = this.extractLocation(patient, errors);
+
+      // Extract patient name
+      const name = this.extractPatientName(patient);
+      if (!name) {
+        const error = createParsingError(
+          patient.id,
+          'Patient.name',
+          'Could not extract patient name',
+          'error',
+          'Patient',
+          patient.id
+        );
+        errors.push(error);
+        logParsingError(error);
+        return null;
+      }
+
+      // Extract CPF (assuming it's in an identifier)
+      const cpf = this.extractCPF(patient);
+      if (!cpf) {
+        const error = createParsingError(
+          patient.id,
+          'Patient.identifier',
+          'Could not extract CPF',
+          'error',
+          'Patient',
+          patient.id
+        );
+        errors.push(error);
+        logParsingError(error);
+        return null;
+      }
+
+      // Extract anemia-related values from observations
+      const anemiaValues = this.extractAnemiaValues(observations, errors);
+      if (!anemiaValues) {
+        return null;
+      }
+
+      // Extract test date (use the earliest date from observations)
+      const testDate = this.extractEarliestTestDate(observations);
+      if (!testDate) {
+        const error = createParsingError(
+          patient.id,
+          'Observation.effectiveDateTime',
+          'Could not parse test date from observations',
+          'error',
+          'Observation'
+        );
+        errors.push(error);
+        logParsingError(error);
+        return null;
+      }
+
+      // Get coordinates from patient location
+      const latitude = location?.latitude || 0;
+      const longitude = location?.longitude || 0;
+
+      // Find municipality by coordinates using database lookup
+      let municipalityId = '0000000'; // Default fallback
+      if (latitude !== 0 && longitude !== 0) {
+        try {
+          const foundMunicipalityId = await findMunicipalityByCoordinates(latitude, longitude);
+          if (foundMunicipalityId) {
+            municipalityId = foundMunicipalityId;
+          } else {
+            errors.push(
+              createParsingError(
+                patient.id,
+                'Patient.address',
+                'Could not find municipality for coordinates, using default',
+                'warning',
+                'Patient',
+                patient.id
+              )
+            );
+          }
+        } catch (error) {
+          errors.push(
+            createParsingError(
+              patient.id,
+              'Patient.address',
+              `Error looking up municipality: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              'warning',
+              'Patient',
+              patient.id
+            )
+          );
+        }
+      } else {
+        errors.push(
+          createParsingError(
+            patient.id,
+            'Patient.address',
+            'No coordinates found, using default municipality',
+            'warning',
+            'Patient',
+            patient.id
+          )
+        );
+      }
+
+      // Generate unique case ID
+      const caseId = `${bundleId}-${patient.id}-anemia`;
+
+      return {
+        id: caseId,
+        patient: {
+          name: name,
+          cpf: cpf,
+          age: age,
+          sex: sex,
+          latitude: latitude,
+          longitude: longitude,
+          municipality_id: municipalityId,
+        },
+        test_date: testDate,
+        hemoglobin: anemiaValues.hemoglobin,
+        hematocrit: anemiaValues.hematocrit,
+        mcv: anemiaValues.mcv,
+        eosinophils: anemiaValues.eosinophils,
+      };
+    } catch (error) {
+      const parsingError = createParsingError(
+        patient.id,
+        'AnemiaCase',
+        `Error creating anemia case: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'error',
+        'Patient',
+        patient.id
+      );
+      errors.push(parsingError);
+      logParsingError(parsingError);
+      return null;
     }
   }
 
@@ -497,5 +812,136 @@ export class FhirParser {
     } catch (error) {
       return null;
     }
+  }
+
+  /**
+   * Extracts patient name from FHIR Patient resource
+   * @param patient Patient resource
+   * @returns Patient name or null
+   */
+  private static extractPatientName(patient: Patient): string | null {
+    if (!patient.name || patient.name.length === 0) {
+      return null;
+    }
+
+    // Use the first name entry
+    const name = patient.name[0];
+    const given = name.given?.join(' ') || '';
+    const family = name.family || '';
+    
+    return `${given} ${family}`.trim() || null;
+  }
+
+  /**
+   * Extracts CPF from FHIR Patient resource identifiers
+   * @param patient Patient resource
+   * @returns CPF string or null
+   */
+  private static extractCPF(patient: Patient): string | null {
+    if (!patient.identifier || patient.identifier.length === 0) {
+      return null;
+    }
+
+    // Look for CPF in identifiers (assuming it's marked with a specific system)
+    for (const identifier of patient.identifier) {
+      if (identifier.system === 'http://www.saude.gov.br/fhir/r4/CodeSystem/BR-CPF' || 
+          identifier.type?.coding?.[0]?.code === 'CPF') {
+        return identifier.value || null;
+      }
+    }
+
+    // Fallback: use first identifier value if no specific CPF found
+    return patient.identifier[0]?.value || null;
+  }
+
+  /**
+   * Extracts anemia-related values from observations
+   * @param observations Array of observations
+   * @param errors Array to collect parsing errors
+   * @returns Object with hemoglobin, hematocrit, MCV, and eosinophils values
+   */
+  private static extractAnemiaValues(
+    observations: Observation[],
+    errors: ParsingError[]
+  ): {
+    hemoglobin: { value: number };
+    hematocrit: { value: number };
+    mcv: { value: number };
+    eosinophils: { value: number };
+  } | null {
+    const values: {
+      hemoglobin?: { value: number };
+      hematocrit?: { value: number };
+      mcv?: { value: number };
+      eosinophils?: { value: number };
+    } = {};
+
+    for (const observation of observations) {
+      const code = observation.code?.coding?.[0]?.code;
+      const value = observation.valueQuantity?.value;
+
+      if (value === undefined || value === null) {
+        continue;
+      }
+
+      switch (code) {
+        case '718-7': // Hemoglobin
+          values.hemoglobin = { value };
+          break;
+        case '4544-3': // Hematocrit
+          values.hematocrit = { value };
+          break;
+        case '787-2': // MCV
+          values.mcv = { value };
+          break;
+        case '770-0': // Eosinophils
+          values.eosinophils = { value };
+          break;
+      }
+    }
+
+    // Check if we have the required values
+    if (!values.hemoglobin || !values.hematocrit || !values.mcv) {
+      errors.push(
+        createParsingError(
+          undefined,
+          'Observation',
+          'Missing required anemia values (hemoglobin, hematocrit, or MCV)',
+          'error',
+          'Observation'
+        )
+      );
+      return null;
+    }
+
+    // Use default eosinophils value if not found
+    if (!values.eosinophils) {
+      values.eosinophils = { value: 0 };
+    }
+
+    return {
+      hemoglobin: values.hemoglobin,
+      hematocrit: values.hematocrit,
+      mcv: values.mcv,
+      eosinophils: values.eosinophils,
+    };
+  }
+
+  /**
+   * Extracts the earliest test date from observations
+   * @param observations Array of observations
+   * @returns Earliest date or null
+   */
+  private static extractEarliestTestDate(observations: Observation[]): Date | null {
+    let earliestDate: Date | null = null;
+
+    for (const observation of observations) {
+      const date = this.parseDate(observation.effectiveDateTime);
+      if (date && (!earliestDate || date < earliestDate)) {
+        earliestDate = date;
+      }
+    }
+
+    return earliestDate;
   }
 }
