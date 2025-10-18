@@ -118,7 +118,7 @@ export async function analyzeParasitosisOutbreak(): Promise<CollectiveAlert[]> {
     if (observedRate > outbreakThreshold) {
       console.log(`COLLECTIVE ALERT: Outbreak confirmed for region ${municipality_id}!`);
       const demographics = getDemographics(clusterCases);
-      const alertId = `outbreak-${municipality_id}-${Date.now()}`;
+      const alertId = `outbreak-${municipality_id}`;
 
       const alert: CollectiveAlert = {
         id: alertId,

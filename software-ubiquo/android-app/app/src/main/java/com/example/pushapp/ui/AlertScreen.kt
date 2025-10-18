@@ -16,11 +16,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pushapp.network.dto.AlertDetails
 
 @Composable
-fun AlertScreen(alertId: String, alertViewModel: AlertViewModel = viewModel()) {
+fun AlertScreen(alertId: String, alertType: String, alertViewModel: AlertViewModel = viewModel()) {
 
     // Dispara a busca dos dados quando a tela é exibida pela primeira vez
-    LaunchedEffect(alertId) {
-        alertViewModel.fetchAlertDetails(alertId)
+    LaunchedEffect(alertId, alertType) {
+        alertViewModel.fetchAlertDetails(alertId, alertType)
     }
 
     // Desenha a UI com base no estado do ViewModel

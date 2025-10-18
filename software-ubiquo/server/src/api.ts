@@ -4,6 +4,7 @@ import { analyzeParasitosisOutbreak } from './algorithms/collective-analysis';
 import { processFhirWebhook } from './services/fhir-service';
 import { Bloodwork } from './types/bloodwork';
 import { OperationOutcome, Bundle } from './types/fhir';
+import { getMockAlertDetails } from './database/mock-db';
 
 const app = express();
 const port = 3000;
@@ -55,15 +56,13 @@ app.get('/alert/:id', (req, res) => {
 
   console.log(`Recebida requisição para o alerta com ID: ${alertId}`);
 
-  const alertDetails = {
-    id: alertId,
-    title: 'Alerta de Exemplo',
-    description: 'Esta é uma descrição detalhada do alerta gerado pelo servidor mock.',
-    severity: 'Alta',
-    timestamp: Date.now(),
-  };
+  const alertDetails = getMockAlertDetails(alertId);
 
-  res.json(alertDetails);
+  if (alertDetails) {
+    res.json(alertDetails);
+  } else {
+    res.status(404).json({ message: "Alert not found" });
+  }
 });
 
 // Endpoint para testar o envio de notificação de anemia

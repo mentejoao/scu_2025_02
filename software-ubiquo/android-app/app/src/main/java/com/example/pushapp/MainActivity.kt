@@ -16,6 +16,7 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         const val ALERT_ID_EXTRA = "ALERT_ID_EXTRA"
+        const val ALERT_TYPE_EXTRA = "ALERT_TYPE_EXTRA"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,12 +32,13 @@ class MainActivity : ComponentActivity() {
             Log.d("FCM_TOKEN", "Current token is: $token")
         }
 
-        val alertId = intent.getStringExtra(ALERT_ID_EXTRA) ?: "123"
+        val alertId = intent.getStringExtra(ALERT_ID_EXTRA) ?: "111.222.333-44"
+        val alertType = intent.getStringExtra(ALERT_TYPE_EXTRA) ?: "UNKNOWN"
 
         setContent {
             PushAppTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    AlertScreen(alertId = alertId)
+                    AlertScreen(alertId = alertId, alertType = alertType)
                 }
             }
         }

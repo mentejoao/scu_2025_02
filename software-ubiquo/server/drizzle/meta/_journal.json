@@ -36,6 +36,13 @@
       "when": 1759535954196,
       "tag": "0004_rename_state_to_estados",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1760745050044,
+      "tag": "0005_add_alerts_table",
+      "breakpoints": true
     }
   ]
 }
