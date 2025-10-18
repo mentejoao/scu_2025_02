@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.pushapp-mergeDebugResources-50:/values-ka/values-ka.xml",
+            "outputFile": "com.example.pushapp-mergeDebugResources-51:/values-ka/values-ka.xml",
             "map": [
                 {
                     "source": "/Users/josecarloslee/.gradle/caches/9.0-milestone-1/transforms/2b20f40bd75448986c125c7042e98d42/transformed/jetified-play-services-basement-18.3.0/res/values-ka/values.xml",

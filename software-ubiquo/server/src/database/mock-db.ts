@@ -76,8 +76,8 @@ const mockAlerts: { [key: string]: MockAlertDetails } = {
   },
   "default-alert": {
     id: "default-alert",
-    title: "Alerta Genérico",
-    description: "Este é um alerta genérico. Detalhes adicionais podem ser encontrados no sistema.",
+    title: "Bem vindo",
+    description: "Para visualizar alguma tela deve ser necessário uma notificação",
     severity: "Baixa",
     timestamp: Date.now(),
   },

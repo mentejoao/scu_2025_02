@@ -1,0 +1,39 @@
+# Gradle files
+.gradle/
+/build/
+
+# Local configuration file (sdk.dir, etc.)
+local.properties
+
+# IntelliJ IDEA files
+.idea/
+*.iml
+
+# Android Studio will place build outputs here
+.cxx/
+*.ap_
+*.apk
+*.aab
+*.aar
+*.class
+*.jar
+*.dex
+*.hprof
+
+# Generated files
+/captures/
+/generated/
+
+# Per-module build outputs
+/app/build/
+/app/.cxx/
+/app/*.iml
+
+# Kotlin
+*.kpt
+
+# Logs
+*.log
+
+# macOS files
+.DS_Store

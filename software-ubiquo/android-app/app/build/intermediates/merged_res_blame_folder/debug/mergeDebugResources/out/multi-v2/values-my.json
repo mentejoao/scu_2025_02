@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.pushapp-mergeDebugResources-50:/values-my/values-my.xml",
+            "outputFile": "com.example.pushapp-mergeDebugResources-51:/values-my/values-my.xml",
             "map": [
                 {
                     "source": "/Users/josecarloslee/.gradle/caches/9.0-milestone-1/transforms/aa60792ef5b849e056aac759d7749d25/transformed/jetified-ui-release/res/values-my/values-my.xml",

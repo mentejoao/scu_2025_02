@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
             Log.d("FCM_TOKEN", "Current token is: $token")
         }
 
-        val alertId = intent.getStringExtra(ALERT_ID_EXTRA) ?: "111.222.333-44"
+        val alertId = intent.getStringExtra(ALERT_ID_EXTRA) ?: "default-alert"
         val alertType = intent.getStringExtra(ALERT_TYPE_EXTRA) ?: "UNKNOWN"
 
         setContent {
