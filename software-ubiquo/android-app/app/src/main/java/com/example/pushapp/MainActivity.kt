@@ -9,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.example.pushapp.ui.AlertScreen
+import com.example.pushapp.ui.WelcomeScreen
 import com.example.pushapp.ui.theme.PushAppTheme
 import com.google.firebase.messaging.FirebaseMessaging
 
@@ -32,13 +33,17 @@ class MainActivity : ComponentActivity() {
             Log.d("FCM_TOKEN", "Current token is: $token")
         }
 
-        val alertId = intent.getStringExtra(ALERT_ID_EXTRA) ?: "default-alert"
-        val alertType = intent.getStringExtra(ALERT_TYPE_EXTRA) ?: "UNKNOWN"
+        val alertId = intent.getStringExtra(ALERT_ID_EXTRA)
+        val alertType = intent.getStringExtra(ALERT_TYPE_EXTRA)
 
         setContent {
             PushAppTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    AlertScreen(alertId = alertId, alertType = alertType)
+                    if (alertId != null && alertType != null) {
+                        AlertScreen(alertId = alertId, alertType = alertType)
+                    } else {
+                        WelcomeScreen()
+                    }
                 }
             }
         }
