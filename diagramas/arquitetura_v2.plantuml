@@ -1,0 +1,44 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE FHIR_Server {
+  Recebe Bundles FHIR
+}
+
+RECTANGLE Backend_Node_TS {
+  Processa Bundles FHIR
+  Normaliza Unidades
+  Popula Base Analítica
+  Executa Algoritmos
+  Dispara Notificações Push
+}
+
+RECTANGLE PostgreSQL_DB {
+  Tabelas:
+  - eosinophilia_cases
+  - geolocated_tests
+  - regional_baselines
+  - city
+  - estados
+}
+
+RECTANGLE Android_App {
+  Consome Alertas
+  Apresenta Informações ao Usuário
+}
+
+RECTANGLE Firebase_Cloud_Messaging {
+  Push Notifications
+}
+
+FHIR_Server --> Backend_Node_TS : Webhook (Bundle)
+Backend_Node_TS --> PostgreSQL_DB : CRUD Dados Analíticos
+Backend_Node_TS --> Firebase_Cloud_Messaging : Envia Alerta
+Firebase_Cloud_Messaging --> Android_App : Push Notification
+Android_App --> Usuário : Exibe Alerta
+
+Backend_Node_TS ..> PostgreSQL_DB : Consulta Baseline
+Backend_Node_TS ..> PostgreSQL_DB : Consulta Casos/Exames
+Backend_Node_TS ..> PostgreSQL_DB : Consulta Municípios/Estados
+
+@enduml
