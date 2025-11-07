@@ -8,20 +8,14 @@
 
 ### 1. Start the Ubiqua Backend Services
 ```bash
-docker compose up -d
-```
+docker compose -f docker-compose.dev.yml up -d```
 
 ### 2. Run Database Migrations
 ```bash
 docker compose exec backend pnpm run db:migrate
 ```
 
-### 3. Seed the Database
-```bash
-docker compose exec backend pnpm run db:seed
-```
-
-### 4. Connect HAPI FHIR Server to Network
+### 5. Connect HAPI FHIR Server to Network
 **Run this after your HAPI FHIR server is running in the other repository:**
 ```bash
 docker network connect server_ubiqua-network hapi-fhir-jpaserver-start
