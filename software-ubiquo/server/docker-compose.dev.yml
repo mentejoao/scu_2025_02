@@ -33,6 +33,7 @@ services:
       DB_USER: postgres
       DB_PASSWORD: changeme
       DB_NAME: ubiqua_db
+      FHIR_BASE_URL: http://hapi-fhir-jpaserver-start:8080
     ports:
       - "3000:3000"
       - "9229:9229"  # Debug port
