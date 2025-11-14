@@ -1,0 +1,28 @@
+@startuml
+actor Profissional as User
+participant "App Android" as App
+participant "Firebase Cloud Messaging" as FCM
+participant "Backend Node/TS" as Backend
+participant "PostgreSQL" as DB
+participant "FHIR Server" as FHIR
+
+User -> App : Realiza ação
+FHIR -> Backend : Envia Bundle FHIR (Webhook)
+Backend -> FHIR : Busca Bundle FHIR (GET)
+Backend -> Backend : Parse e normalização dos dados
+Backend -> DB : Persiste dados (eosinophilia_cases, geolocated_tests)
+Backend -> Backend : Executa análise individual (anemia)\nExecuta análise coletiva (surtos)
+Backend -> DB : Consulta dados analíticos e baseline
+alt Alerta Individual
+    Backend -> FCM : Envia notificação push (anemia)
+    FCM -> App : Entrega notificação individual
+    App -> User : Exibe alerta individual
+end
+alt Alerta Coletivo
+    Backend -> FCM : Envia notificação push (surto)
+    FCM -> App : Entrega notificação coletiva
+    App -> User : Exibe alerta coletivo
+end
+App -> Backend : Consulta histórico/detalhes via API REST
+Backend -> DB : Consulta dados para resposta
+@enduml
