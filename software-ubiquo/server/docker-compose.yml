@@ -26,11 +26,14 @@ services:
     container_name: ubiqua-backend
     environment:
       NODE_ENV: production
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: changeme
-      DB_NAME: ubiqua_db
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-changeme}
+      DB_NAME: ${DB_NAME:-ubiqua_db}
+      DB_SSL: ${DB_SSL:-false}
+      DB_SSL_REJECT_UNAUTHORIZED: ${DB_SSL_REJECT_UNAUTHORIZED:-true}
+      DB_SSL_CA: ${DB_SSL_CA:-/app/ca.pem}
     ports:
       - "3000:3000"
     depends_on:
@@ -38,6 +41,7 @@ services:
         condition: service_healthy
     volumes:
       - ./serviceAccountKey.json:/app/serviceAccountKey.json:ro
+      - ./ca.pem:/app/ca.pem:ro  # Mount SSL certificate if it exists
     networks:
       - ubiqua-network
     restart: unless-stopped

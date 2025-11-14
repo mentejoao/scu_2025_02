@@ -21,13 +21,13 @@ describe('analyzeSevereAnemia', () => {
     hemoglobin: { value: 15 }, // Default normal value
   };
 
-  it('should return an IndividualAlert for hemoglobin below the 8.0 threshold', () => {
+  it('should return an IndividualAlert for hemoglobin below the 8.0 threshold', async () => {
     const bloodwork: Bloodwork = {
       ...baseBloodwork,
       hemoglobin: { value: 7.9 },
     };
 
-    const result = analyzeSevereAnemia(bloodwork);
+    const result = await analyzeSevereAnemia(bloodwork);
 
     expect(result).not.toBeNull();
     expect(result?.type).toBe('SEVERE_ANEMIA');
@@ -35,24 +35,24 @@ describe('analyzeSevereAnemia', () => {
     expect(result?.details.hemoglobin).toBe(7.9);
   });
 
-  it('should return null for hemoglobin at the 8.0 threshold', () => {
+  it('should return null for hemoglobin at the 8.0 threshold', async () => {
     const bloodwork: Bloodwork = {
       ...baseBloodwork,
       hemoglobin: { value: 8.0 },
     };
 
-    const result = analyzeSevereAnemia(bloodwork);
+    const result = await analyzeSevereAnemia(bloodwork);
 
     expect(result).toBeNull();
   });
 
-  it('should return null for hemoglobin above the 8.0 threshold', () => {
+  it('should return null for hemoglobin above the 8.0 threshold', async () => {
     const bloodwork: Bloodwork = {
       ...baseBloodwork,
       hemoglobin: { value: 12.0 },
     };
 
-    const result = analyzeSevereAnemia(bloodwork);
+    const result = await analyzeSevereAnemia(bloodwork);
 
     expect(result).toBeNull();
   });
