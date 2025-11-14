@@ -114,9 +114,35 @@ def gerar_paciente_eosinofilia(i, usar_outbreak=False):
         json.dump(bundle, f, indent=2, ensure_ascii=False)
     print(f"Arquivo gerado: {file_path}")
 
-def gerar_eosinofilias(n=10):
-    for i in range(1, n + 1):
-        gerar_paciente_eosinofilia(i)
+def gerar_eosinofilias(n=10, outbreak_percentage=0.0):
+    """
+    Gera casos de eosinofilia com distribuição controlada.
+    
+    Args:
+        n: Número total de casos a gerar
+        outbreak_percentage: Percentual de casos concentrados no surto (0.0 a 1.0)
+                           Ex: 0.2 = 20% dos casos estarão próximos ao ponto de surto
+    """
+    num_outbreak = int(n * outbreak_percentage)
+    num_aleatorios = n - num_outbreak
+    
+    print(f"\n{'='*60}")
+    print(f"Gerando {n} casos de eosinofilia:")
+    print(f"  - {num_outbreak} casos no surto (lat={LAT_OUTBREAK}, lon={LON_OUTBREAK}, raio={RAIO_OUTBREAK_METROS}m)")
+    print(f"  - {num_aleatorios} casos aleatórios pelo Brasil")
+    print(f"{'='*60}\n")
+    
+    # Gerar casos do surto (primeiros casos)
+    for i in range(1, num_outbreak + 1):
+        gerar_paciente_eosinofilia(i, usar_outbreak=True)
+    
+    # Gerar casos aleatórios
+    for i in range(num_outbreak + 1, n + 1):
+        gerar_paciente_eosinofilia(i, usar_outbreak=False)
+    
+    print(f"\n{'='*60}")
+    print(f"Total de {n} arquivos gerados em '{OUTPUT_DIR}/'")
+    print(f"{'='*60}\n")
 
 if __name__ == "__main__":
     gerar_eosinofilias(10)
