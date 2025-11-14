@@ -12,7 +12,7 @@ docker compose -f docker-compose.dev.yml up -d```
 
 ### 2. Run Database Migrations
 ```bash
-docker compose exec server-backend-dev pnpm run db:migrate
+docker compose exec backend-dev pnpm run db:migrate
 ```
 
 ### 3. Connect HAPI FHIR Server to Network
