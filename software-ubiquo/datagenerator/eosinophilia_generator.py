@@ -145,4 +145,5 @@ def gerar_eosinofilias(n=10, outbreak_percentage=0.0):
     print(f"{'='*60}\n")
 
 if __name__ == "__main__":
-    gerar_eosinofilias(10)
+    # Exemplo: gerar 100 casos, sendo 20% (20 casos) no surto
+    gerar_eosinofilias(100, 0.2)
