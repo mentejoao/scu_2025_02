@@ -4,6 +4,7 @@ import { CollectiveAlert } from '../types/alerts';
 import {
   getBaselineForRegion,
   getEosinophiliaCasesInWindow,
+  getMunicipalityNameById,
   getTotalTestsInArea,
 } from '../database/mock-db';
 // Change to ../database/schema
@@ -66,7 +67,7 @@ export async function analyzeParasitosisOutbreak(): Promise<CollectiveAlert[]> {
   const dbscan = new DBSCAN();
   const dataset = positiveCases.map((c) => [c.latitude, c.longitude]);
 
-  const epsilon = 0.02; // Approx 2km in degrees. For production, use a geo-library.
+  const epsilon = 0.02; // Approx 2km in degrees.
   const minPts = 5;
 
   console.log(`ANALYSIS: Running DBSCAN with epsilon=${epsilon} and minPts=${minPts}`);
@@ -77,87 +78,136 @@ export async function analyzeParasitosisOutbreak(): Promise<CollectiveAlert[]> {
 
   for (const indices of clusterIndices) {
     let clusterCases = indices.map((i: number) => positiveCases[i]);
-
     clusterCases = filterNonInfectiousCauses(clusterCases);
+
     if (clusterCases.length < minPts) {
       console.log('ANALYSIS: Cluster discarded after filtering. Size fell below minPts.');
       continue;
     }
 
-    const centroid = calculateCentroid(clusterCases);
-    const municipality_id = clusterCases[0].municipality_id;
+    // 1. Group cases by municipality within the cluster
+    const casesByMunicipality = new Map<string, EosinophiliaCase[]>();
+    clusterCases.forEach((caseItem) => {
+      const municipalityCases = casesByMunicipality.get(caseItem.municipality_id) || [];
+      municipalityCases.push(caseItem);
+      casesByMunicipality.set(caseItem.municipality_id, municipalityCases);
+    });
 
-    const caseCount = clusterCases.length;
-    const totalTestsInArea = await getTotalTestsInArea(
-      centroid.lat,
-      centroid.lon,
-      2,
-      startDate,
-      endDate
-    );
-    if (totalTestsInArea === 0) continue;
+    const outbreakMunicipalitiesData = [];
 
-    const observedRate = (caseCount / totalTestsInArea) * 1000;
+    // 2. Analyze each municipality subgroup in the cluster
+    for (const [municipality_id, municipalityCases] of casesByMunicipality.entries()) {
+      if (municipalityCases.length === 0) continue;
 
-    const month_year = endDate.toISOString().slice(0, 7);
-    const baseline = await getBaselineForRegion(municipality_id, month_year);
-    if (!baseline) {
-      console.log(
-        `WARNING: No baseline found for region ${municipality_id}. Cannot validate cluster.`
+      const centroid = calculateCentroid(municipalityCases);
+      const caseCount = municipalityCases.length;
+      const totalTestsInArea = await getTotalTestsInArea(
+        centroid.lat,
+        centroid.lon,
+        2,
+        startDate,
+        endDate
       );
-      continue;
+      if (totalTestsInArea === 0) continue;
+
+      const observedRate = (caseCount / totalTestsInArea) * 1000;
+      const month_year = endDate.toISOString().slice(0, 7);
+      const baseline = await getBaselineForRegion(municipality_id, month_year);
+
+      if (!baseline) {
+        console.log(
+          `WARNING: No baseline found for region ${municipality_id}. Cannot validate.`
+        );
+        continue;
+      }
+
+      const { expected_rate_per_1000_tests, rate_standard_deviation } = baseline;
+      const outbreakThreshold = expected_rate_per_1000_tests + 2 * rate_standard_deviation;
+
+      console.log(
+        `VALIDATION: Municipality ${municipality_id} -> Observed Rate: ${observedRate.toFixed(2)}/1000, Threshold: ${outbreakThreshold.toFixed(2)}/1000`
+      );
+
+      if (observedRate > outbreakThreshold) {
+        console.log(`CONFIRMED: Outbreak conditions met for municipality ${municipality_id}.`);
+        outbreakMunicipalitiesData.push({
+          municipality_id,
+          caseCount,
+          observedRate,
+          expected_rate_per_1000_tests,
+          outbreakThreshold,
+          cases: municipalityCases,
+        });
+      }
     }
 
-    const { expected_rate_per_1000_tests, rate_standard_deviation } = baseline;
-    const outbreakThreshold = expected_rate_per_1000_tests + 2 * rate_standard_deviation;
+    // 3. If outbreaks were found, create a single, combined alert for the cluster
+    if (outbreakMunicipalitiesData.length > 0) {
+      const involvedMunicipalities = await Promise.all(
+        outbreakMunicipalitiesData.map(async (data) => ({
+          municipality_id: data.municipality_id,
+          municipality_name: await getMunicipalityNameById(data.municipality_id),
+          case_count: data.caseCount,
+        }))
+      );
 
-    console.log(
-      `VALIDATION: Cluster @ (${centroid.lat.toFixed(4)}, ${centroid.lon.toFixed(4)}) -> Observed Rate: ${observedRate.toFixed(2)}/1000, Threshold: ${outbreakThreshold.toFixed(2)}/1000`
-    );
+      const combinedCaseCount = outbreakMunicipalitiesData.reduce(
+        (sum, data) => sum + data.caseCount,
+        0
+      );
+      const mainMunicipalityData = outbreakMunicipalitiesData[0];
+      const allCases = outbreakMunicipalitiesData.flatMap((data) => data.cases);
+      const clusterCentroid = calculateCentroid(allCases);
+      const demographics = getDemographics(allCases);
 
-    if (observedRate > outbreakThreshold) {
-      console.log(`COLLECTIVE ALERT: Outbreak confirmed for region ${municipality_id}!`);
-      const demographics = getDemographics(clusterCases);
-      const alertId = `outbreak-${municipality_id}`;
+      const alertId = `outbreak-cluster-${involvedMunicipalities
+        .map((d) => d.municipality_id)
+        .join('-')}`;
+      
+      const involvedMunicipalitiesStr = involvedMunicipalities
+        .map((d) => `${d.municipality_name} (${d.case_count} casos)`)
+        .join(', ');
 
       const alert: CollectiveAlert = {
         id: alertId,
         type: 'PARASITOSIS_OUTBREAK',
         alert_date: new Date(),
         location: {
-          centroid_lat: centroid.lat,
-          centroid_lon: centroid.lon,
+          centroid_lat: clusterCentroid.lat,
+          centroid_lon: clusterCentroid.lon,
           radius_meters: 2000,
-          municipality_id: municipality_id,
+          municipality_id: mainMunicipalityData.municipality_id,
+          municipality_name: involvedMunicipalities[0].municipality_name,
         },
         statistics: {
-          case_count: caseCount,
-          observed_rate_per_1000: observedRate,
-          expected_rate_per_1000: expected_rate_per_1000_tests,
-          outbreak_threshold_per_1000: outbreakThreshold,
+          case_count: combinedCaseCount,
+          observed_rate_per_1000: mainMunicipalityData.observedRate,
+          expected_rate_per_1000: mainMunicipalityData.expected_rate_per_1000_tests,
+          outbreak_threshold_per_1000: mainMunicipalityData.outbreakThreshold,
         },
         cluster_info: {
           average_age: demographics.avgAge,
           sex_distribution: demographics.sexDist,
+          involved_municipalities: involvedMunicipalities,
         },
-        case_ids: clusterCases.map((c: EosinophiliaCase) => c.id),
+        case_ids: allCases.map((c: EosinophiliaCase) => c.id),
       };
       collectiveAlerts.push(alert);
 
-      // TODO: Substituir pelo token real do gestor de saúde da região.
+      console.log(`COLLECTIVE ALERT: Outbreak confirmed for cluster involving municipalities: ${involvedMunicipalitiesStr} at Lat: ${clusterCentroid.lat.toFixed(2)}, Lon: ${clusterCentroid.lon.toFixed(2)}`);
+
       const placeholderManagerToken =
         'dwNNV6rTTr2GIwmdzzjZra:APA91bEoPMgiVOG-UzeR8wgjjyUplSiUoR_ZPTODBi5QUpMSLmsveubJXEeI6BipvtonHBXkAmJFGPHZ9YpQh5yK73SsTDLLfzt2lFItdiWzFV5yHsiqMVs';
-
-      const data = {
+      const notificationData = {
         alertType: 'PARASITOSIS_OUTBREAK',
         alertId: alert.id,
       };
 
       sendPushNotification(
         placeholderManagerToken,
-        data,
+        notificationData,
         'Alerta de Surto de Parasitose',
-        `Surto confirmado na região ${alert.location.municipality_id} com ${alert.statistics.case_count} casos.`
+        `Surto confirmado em ${involvedMunicipalitiesStr} (Lat: ${clusterCentroid.lat.toFixed(2)}, Lon: ${clusterCentroid.lon.toFixed(2)}). Total de ${combinedCaseCount} casos.`
       );
     }
   }
@@ -165,3 +215,4 @@ export async function analyzeParasitosisOutbreak(): Promise<CollectiveAlert[]> {
   console.log(`--- ANALYSIS COMPLETE. ${collectiveAlerts.length} OUTBREAKS CONFIRMED. ---`);
   return collectiveAlerts;
 }
+

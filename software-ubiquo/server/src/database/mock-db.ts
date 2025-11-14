@@ -49,6 +49,12 @@ const dbRegionalBaselines: RegionalBaseline[] = [
   },
 ];
 
+const mockMunicipalityNames: { [key: string]: string } = {
+  [GOIANIA_MUNICIPALITY_ID]: 'Goiânia',
+  '5200258': 'Aparecida de Goiânia',
+  '5221405': 'Trindade',
+};
+
 // --- MOCK ALERT DETAILS --- //
 
 export interface MockAlertDetails {
@@ -130,4 +136,11 @@ export const getBaselineForRegion = async (
     (b) => b.region_id === municipality_id && b.month_year === month_year
   );
   return baseline || null;
+};
+
+export const getMunicipalityNameById = async (
+  municipality_id: string
+): Promise<string> => {
+  console.log(`DB: Fetching name for municipality ${municipality_id}`);
+  return mockMunicipalityNames[municipality_id] || 'Nome não encontrado';
 };

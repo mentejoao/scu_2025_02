@@ -18,6 +18,7 @@ export interface CollectiveAlert {
     centroid_lon: number;
     radius_meters: number;
     municipality_id: string;
+    municipality_name: string;
   };
   statistics: {
     case_count: number;
@@ -28,6 +29,11 @@ export interface CollectiveAlert {
   cluster_info: {
     average_age: number;
     sex_distribution: { M: number; F: number };
+    involved_municipalities: {
+      municipality_id: string;
+      municipality_name: string;
+      case_count: number;
+    }[];
   };
   case_ids: string[];
 }
