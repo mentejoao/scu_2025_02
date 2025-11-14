@@ -1,6 +1,7 @@
 import json
 import random
 import os
+import math
 from faker import Faker
 
 fake = Faker("pt_BR")
@@ -8,9 +9,52 @@ fake = Faker("pt_BR")
 OUTPUT_DIR = "out_eosinophilia"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-def gerar_paciente_eosinofilia(i):
-    lat = round(random.uniform(-33.0, -2.0), 6)
-    lon = round(random.uniform(-60.0, -35.0), 6)
+# Coordenadas do surto (outbreak)
+LAT_OUTBREAK = -4.94714
+LON_OUTBREAK = -47.5004
+RAIO_OUTBREAK_METROS = 500  # raio em metros
+
+def gerar_coordenadas_aleatorias_em_circulo(lat_centro, lon_centro, raio_metros):
+    """
+    Gera coordenadas aleatórias dentro de um círculo.
+    
+    Args:
+        lat_centro: Latitude do centro
+        lon_centro: Longitude do centro
+        raio_metros: Raio do círculo em metros
+    
+    Returns:
+        tuple: (latitude, longitude) do ponto aleatório
+    """
+    # Converter raio de metros para graus (aproximadamente)
+    # 1 grau de latitude ≈ 111.320 km
+    # 1 grau de longitude varia com a latitude, mas usamos uma aproximação
+    raio_lat = raio_metros / 111320.0
+    raio_lon = raio_metros / (111320.0 * abs(math.cos(math.radians(lat_centro))))
+    
+    # Gerar ângulo e distância aleatórios
+    angulo = random.uniform(0, 2 * math.pi)
+    # Usar raiz quadrada para distribuição uniforme no círculo
+    distancia = math.sqrt(random.uniform(0, 1))
+    
+    # Calcular deslocamento
+    delta_lat = distancia * raio_lat * math.cos(angulo)
+    delta_lon = distancia * raio_lon * math.sin(angulo)
+    
+    # Retornar novas coordenadas
+    return round(lat_centro + delta_lat, 6), round(lon_centro + delta_lon, 6)
+
+def gerar_paciente_eosinofilia(i, usar_outbreak=False):
+    # Determinar se este paciente está no surto ou espalhado aleatoriamente
+    if usar_outbreak:
+        lat, lon = gerar_coordenadas_aleatorias_em_circulo(
+            LAT_OUTBREAK, LON_OUTBREAK, RAIO_OUTBREAK_METROS
+        )
+    else:
+        # Coordenadas aleatórias em todo o Brasil
+        lat = round(random.uniform(-33.0, -2.0), 6)
+        lon = round(random.uniform(-60.0, -35.0), 6)
+    
     nome = fake.first_name_male()
     sobrenome = fake.last_name()
 
