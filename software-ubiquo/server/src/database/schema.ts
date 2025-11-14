@@ -74,6 +74,20 @@ export const alerts = pgTable('alerts', {
   alert_type: varchar('alert_type', { length: 50 }).notNull(), // 'outbreak', 'individual', 'generic'
 });
 
+// Notifications table
+export const notifications = pgTable('notifications', {
+  id: varchar('id', { length: 255 }).primaryKey(), // This is the alertId used in the API
+  title: varchar('title', { length: 255 }).notNull(),
+  description: varchar('description', { length: 1000 }).notNull(),
+  severity: varchar('severity', { length: 20 }).notNull(), // 'Alta', 'Média', 'Baixa'
+  timestamp: timestamp('timestamp', { withTimezone: true }).notNull(),
+  alert_type: varchar('alert_type', { length: 50 }).notNull(), // 'SEVERE_ANEMIA', 'PARASITOSIS_OUTBREAK'
+  patient_cpf: varchar('patient_cpf', { length: 14 }), // Optional: for individual alerts
+  municipality_id: varchar('municipality_id', { length: 10 }), // Optional: for collective alerts
+  notification_token: varchar('notification_token', { length: 255 }).notNull(), // FCM token
+  created_at: timestamp('created_at', { withTimezone: true }).notNull().$defaultFn(() => new Date()),
+});
+
 // Export types for use in the application
 export type Estado = typeof estados.$inferSelect;
 export type NewEstado = typeof estados.$inferInsert;
@@ -92,3 +106,6 @@ export type NewRegionalBaseline = typeof regionalBaselines.$inferInsert;
 
 export type Alert = typeof alerts.$inferSelect;
 export type NewAlert = typeof alerts.$inferInsert;
+
+export type Notification = typeof notifications.$inferSelect;
+export type NewNotification = typeof notifications.$inferInsert;

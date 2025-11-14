@@ -9,7 +9,7 @@ import { sendPushNotification } from '../services/notification-service';
  * @param bloodwork The parsed blood work object.
  * @returns An IndividualAlert object if severe anemia is detected, otherwise null.
  */
-export function analyzeSevereAnemia(bloodwork: Bloodwork): IndividualAlert | null {
+export async function analyzeSevereAnemia(bloodwork: Bloodwork): Promise<IndividualAlert | null> {
   const HGB_THRESHOLD = 8.0; // g/dL
 
   if (bloodwork.hemoglobin.value < HGB_THRESHOLD) {
@@ -28,20 +28,46 @@ export function analyzeSevereAnemia(bloodwork: Bloodwork): IndividualAlert | nul
       },
     };
 
+    // Generate unique alertId
+    const alertId = `anemia-${bloodwork.patient.cpf}-${Date.now()}`;
+
     // TODO: Substituir pelo token real do médico responsável por este paciente.
     const placeholderDoctorToken =
       'dwNNV6rTTr2GIwmdzzjZra:APA91bEoPMgiVOG-UzeR8wgjjyUplSiUoR_ZPTODBi5QUpMSLmsveubJXEeI6BipvtonHBXkAmJFGPHZ9YpQh5yK73SsTDLLfzt2lFItdiWzFV5yHsiqMVs';
 
+    const notificationTitle = 'Alerta de Anemia Severa';
+    const notificationBody = `Paciente ${bloodwork.patient.name} apresenta hemoglobina em ${bloodwork.hemoglobin.value} g/dL.`;
+    const description = `O paciente ${bloodwork.patient.name} (CPF: ${bloodwork.patient.cpf}) apresenta níveis de hemoglobina muito baixos (${bloodwork.hemoglobin.value} g/dL), indicando anemia severa. Recomenda-se intervenção imediata.`;
+
     const data = {
       alertType: 'SEVERE_ANEMIA',
-      alertId: alert.patient_cpf,
+      alertId: alertId,
     };
 
-    sendPushNotification(
+    // Determine severity based on hemoglobin value
+    let severity: 'Alta' | 'Média' | 'Baixa' = 'Média';
+    if (bloodwork.hemoglobin.value < 7.0) {
+      severity = 'Alta';
+    } else if (bloodwork.hemoglobin.value < 8.0) {
+      severity = 'Média';
+    }
+
+    await sendPushNotification(
       placeholderDoctorToken,
-      data, // Usando o CPF como um ID de alerta único
-      'Alerta de Anemia Severa',
-      `Paciente ${bloodwork.patient.name} apresenta hemoglobina em ${bloodwork.hemoglobin.value} g/dL.`
+      data,
+      notificationTitle,
+      notificationBody,
+      {
+        id: alertId,
+        title: notificationTitle,
+        description: description,
+        severity: severity,
+        timestamp: new Date(),
+        alert_type: 'SEVERE_ANEMIA',
+        patient_cpf: bloodwork.patient.cpf,
+        municipality_id: bloodwork.patient.municipality_id || null,
+        notification_token: placeholderDoctorToken,
+      }
     );
 
     return alert;

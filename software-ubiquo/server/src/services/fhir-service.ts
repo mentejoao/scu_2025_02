@@ -84,7 +84,7 @@ export async function processFhirWebhook(bundleId: string): Promise<Bundle> {
       for (const bloodwork of anemiaCases) {
         console.log(`Analyzing anemia case for patient ${bloodwork.patient.cpf}`);
         
-        const alert = analyzeSevereAnemia(bloodwork);
+        const alert = await analyzeSevereAnemia(bloodwork);
         
         if (alert) {
           console.log(`ANEMIA ALERT: Severe anemia detected for patient ${bloodwork.patient.cpf} (Hb: ${bloodwork.hemoglobin.value} g/dL)`);

@@ -7,7 +7,7 @@ export { analyzeSevereAnemia, analyzeParasitosisOutbreak };
 
 // --- DEMONSTRATION --- //
 
-function demonstrateIndividualAnalysis() {
+async function demonstrateIndividualAnalysis() {
   console.log('\n--- DEMONSTRATING INDIVIDUAL ANALYSIS ---');
   const normalBloodwork: Bloodwork = {
     id: 'bw-1',
@@ -46,11 +46,11 @@ function demonstrateIndividualAnalysis() {
   };
 
   console.log('\nAnalyzing normal bloodwork...');
-  const normalResult = analyzeSevereAnemia(normalBloodwork);
+  const normalResult = await analyzeSevereAnemia(normalBloodwork);
   console.log('Result:', normalResult || 'No alert generated.');
 
   console.log('\nAnalyzing bloodwork with severe anemia...');
-  const anemiaResult = analyzeSevereAnemia(severeAnemiaBloodwork);
+  const anemiaResult = await analyzeSevereAnemia(severeAnemiaBloodwork);
   console.log('Result:', anemiaResult);
 }
 
@@ -67,7 +67,7 @@ async function demonstrateCollectiveAnalysis() {
 }
 
 async function main() {
-  demonstrateIndividualAnalysis();
+  await demonstrateIndividualAnalysis();
   await demonstrateCollectiveAnalysis();
 }
 

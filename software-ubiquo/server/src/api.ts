@@ -4,7 +4,7 @@ import { analyzeParasitosisOutbreak } from './algorithms/collective-analysis';
 import { processFhirWebhook } from './services/fhir-service';
 import { Bloodwork } from './types/bloodwork';
 import { OperationOutcome, Bundle } from './types/fhir';
-import { getMockAlertDetails } from './database/mock-db';
+import { getNotificationByAlertId } from './services/notification-service';
 
 const app = express();
 const port = 3000;
@@ -51,22 +51,34 @@ app.put('/fhir-webhook/Bundle/:id', async (req: Request, res: Response) => {
 });
 
 // Endpoint que o app Android vai chamar
-app.get('/alert/:id', (req, res) => {
+app.get('/alert/:id', async (req, res) => {
   const alertId = req.params.id;
 
   console.log(`Recebida requisição para o alerta com ID: ${alertId}`);
 
-  const alertDetails = getMockAlertDetails(alertId);
+  try {
+    const notification = await getNotificationByAlertId(alertId);
 
-  if (alertDetails) {
-    res.json(alertDetails);
-  } else {
-    res.status(404).json({ message: "Alert not found" });
+    if (notification) {
+      // Format response to match the expected structure
+      res.json({
+        id: notification.id,
+        title: notification.title,
+        description: notification.description,
+        severity: notification.severity,
+        timestamp: notification.timestamp.getTime(),
+      });
+    } else {
+      res.status(404).json({ message: "Alert not found" });
+    }
+  } catch (error) {
+    console.error('Erro ao buscar notificação:', error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
 // Endpoint para testar o envio de notificação de anemia
-app.get('/test-anemia-alert', (req, res) => {
+app.get('/test-anemia-alert', async (req, res) => {
   console.log('\n--- ACIONANDO TESTE DE ALERTA DE ANEMIA ---');
 
   // 1. Criar um exame de sangue mockado que com certeza vai gerar um alerta
@@ -90,12 +102,17 @@ app.get('/test-anemia-alert', (req, res) => {
   };
 
   // 2. Chamar a função de análise
-  const alert = analyzeSevereAnemia(mockBloodwork);
+  try {
+    const alert = await analyzeSevereAnemia(mockBloodwork);
 
-  if (alert) {
-    res.send('Análise de anemia acionada. Verifique seu dispositivo para uma notificação.');
-  } else {
-    res.send('Análise de anemia acionada, mas nenhum alerta foi gerado.');
+    if (alert) {
+      res.send('Análise de anemia acionada. Verifique seu dispositivo para uma notificação.');
+    } else {
+      res.send('Análise de anemia acionada, mas nenhum alerta foi gerado.');
+    }
+  } catch (error) {
+    console.error('Erro ao processar alerta de anemia:', error);
+    res.status(500).send('Erro ao processar alerta de anemia.');
   }
 });
 

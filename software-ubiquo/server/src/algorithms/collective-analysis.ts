@@ -203,11 +203,26 @@ export async function analyzeParasitosisOutbreak(): Promise<CollectiveAlert[]> {
         alertId: alert.id,
       };
 
-      sendPushNotification(
+      const notificationTitle = 'Alerta de Surto de Parasitose';
+      const notificationBody = `Surto confirmado em ${involvedMunicipalitiesStr} (Lat: ${clusterCentroid.lat.toFixed(2)}, Lon: ${clusterCentroid.lon.toFixed(2)}). Total de ${combinedCaseCount} casos.`;
+      const description = `Foi detectado um surto de parasitose na região de ${involvedMunicipalitiesStr}. Total de ${combinedCaseCount} casos confirmados. Por favor, verifique os detalhes e tome as medidas cabíveis.`;
+
+      await sendPushNotification(
         placeholderManagerToken,
         notificationData,
-        'Alerta de Surto de Parasitose',
-        `Surto confirmado em ${involvedMunicipalitiesStr} (Lat: ${clusterCentroid.lat.toFixed(2)}, Lon: ${clusterCentroid.lon.toFixed(2)}). Total de ${combinedCaseCount} casos.`
+        notificationTitle,
+        notificationBody,
+        {
+          id: alert.id,
+          title: notificationTitle,
+          description: description,
+          severity: 'Alta',
+          timestamp: new Date(),
+          alert_type: 'PARASITOSIS_OUTBREAK',
+          patient_cpf: null,
+          municipality_id: mainMunicipalityData.municipality_id,
+          notification_token: placeholderManagerToken,
+        }
       );
     }
   }
