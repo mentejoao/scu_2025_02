@@ -6,9 +6,9 @@ import {
   getEosinophiliaCasesInWindow,
   getMunicipalityNameById,
   getTotalTestsInArea,
-} from '../database/mock-db';
+} from '../database/db';
 // Change to ../database/schema
-import { EosinophiliaCase } from '../database/types';
+import { EosinophiliaCase } from '../database/schema';
 import { sendPushNotification } from '../services/notification-service';
 
 // --- Helper Functions ---
@@ -146,7 +146,7 @@ export async function analyzeParasitosisOutbreak(): Promise<CollectiveAlert[]> {
       const involvedMunicipalities = await Promise.all(
         outbreakMunicipalitiesData.map(async (data) => ({
           municipality_id: data.municipality_id,
-          municipality_name: await getMunicipalityNameById(data.municipality_id),
+          municipality_name: await getMunicipalityNameById(data.municipality_id) || '',
           case_count: data.caseCount,
         }))
       );
@@ -163,7 +163,7 @@ export async function analyzeParasitosisOutbreak(): Promise<CollectiveAlert[]> {
       const alertId = `outbreak-cluster-${involvedMunicipalities
         .map((d) => d.municipality_id)
         .join('-')}`;
-      
+
       const involvedMunicipalitiesStr = involvedMunicipalities
         .map((d) => `${d.municipality_name} (${d.case_count} casos)`)
         .join(', ');

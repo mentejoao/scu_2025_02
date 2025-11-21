@@ -64,6 +64,18 @@ export const getBaselineForRegion = async (municipality_id: string, month_year: 
   return baseline.length > 0 ? baseline[0] : null;
 };
 
+export const getMunicipalityNameById = async (municipality_id: string) => {
+  console.log(`DB: Fetching municipality name for ID ${municipality_id}`);
+
+  const municipality = await db
+    .select()
+    .from(city)
+    .where(eq(city.codigo_ibge, parseInt(municipality_id, 10)))
+    .limit(1);
+
+  return municipality.length > 0 ? municipality[0].nome : null;
+};
+
 // Additional utility functions
 
 export const insertEosinophiliaCase = async (caseData: typeof eosinophiliaCases.$inferInsert) => {
