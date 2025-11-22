@@ -56,6 +56,7 @@ export async function analyzeParasitosisOutbreak(): Promise<CollectiveAlert[]> {
   const endDate = new Date();
   const startDate = new Date();
   startDate.setDate(endDate.getDate() - 30);
+  console.log(`DEBUG: Analysis window: ${startDate.toISOString()} to ${endDate.toISOString()}`);
 
   const positiveCases = await getEosinophiliaCasesInWindow(startDate, endDate);
   if (positiveCases.length === 0) {
@@ -63,9 +64,11 @@ export async function analyzeParasitosisOutbreak(): Promise<CollectiveAlert[]> {
     return [];
   }
   console.log(`ANALYSIS: Found ${positiveCases.length} positive cases in the last 30 days.`);
+  console.log('DEBUG: Positive cases sample:', positiveCases.slice(0, 2));
 
   const dbscan = new DBSCAN();
   const dataset = positiveCases.map((c) => [c.latitude, c.longitude]);
+  console.log('DEBUG: DBSCAN dataset size:', dataset.length);
 
   const epsilon = 0.02; // Approx 2km in degrees.
   const minPts = 5;
@@ -73,17 +76,22 @@ export async function analyzeParasitosisOutbreak(): Promise<CollectiveAlert[]> {
   console.log(`ANALYSIS: Running DBSCAN with epsilon=${epsilon} and minPts=${minPts}`);
   const clusterIndices: number[][] = dbscan.run(dataset, epsilon, minPts);
   console.log(`ANALYSIS: DBSCAN found ${clusterIndices.length} potential clusters.`);
+  console.log('DEBUG: Raw cluster indices:', clusterIndices);
 
   const collectiveAlerts: CollectiveAlert[] = [];
 
-  for (const indices of clusterIndices) {
+  for (const [i, indices] of clusterIndices.entries()) {
+    console.log(`\nDEBUG: Processing cluster #${i} with ${indices.length} cases.`);
     let clusterCases = indices.map((i: number) => positiveCases[i]);
+    console.log('DEBUG: Cluster cases (before filter):', clusterCases.map(c => c.id));
+
     clusterCases = filterNonInfectiousCauses(clusterCases);
 
     if (clusterCases.length < minPts) {
-      console.log('ANALYSIS: Cluster discarded after filtering. Size fell below minPts.');
+      console.log(`ANALYSIS: Cluster #${i} discarded after filtering. Size fell below minPts (${clusterCases.length} < ${minPts}).`);
       continue;
     }
+    console.log(`DEBUG: Cluster #${i} has ${clusterCases.length} cases after filtering.`);
 
     // 1. Group cases by municipality within the cluster
     const casesByMunicipality = new Map<string, EosinophiliaCase[]>();
@@ -92,15 +100,22 @@ export async function analyzeParasitosisOutbreak(): Promise<CollectiveAlert[]> {
       municipalityCases.push(caseItem);
       casesByMunicipality.set(caseItem.municipality_id, municipalityCases);
     });
+    console.log(`DEBUG: Cluster #${i} spans ${casesByMunicipality.size} municipalities:`, Array.from(casesByMunicipality.keys()));
 
     const outbreakMunicipalitiesData = [];
 
     // 2. Analyze each municipality subgroup in the cluster
     for (const [municipality_id, municipalityCases] of casesByMunicipality.entries()) {
-      if (municipalityCases.length === 0) continue;
+      console.log(`\nDEBUG: Analyzing municipality ${municipality_id} in cluster #${i}...`);
+      if (municipalityCases.length === 0) {
+        console.log(`DEBUG: Municipality ${municipality_id} has no cases, skipping.`);
+        continue;
+      }
 
       const centroid = calculateCentroid(municipalityCases);
       const caseCount = municipalityCases.length;
+      console.log(`DEBUG: Municipality ${municipality_id} -> Centroid: ${JSON.stringify(centroid)}, Case Count: ${caseCount}`);
+
       const totalTestsInArea = await getTotalTestsInArea(
         centroid.lat,
         centroid.lon,
@@ -108,10 +123,16 @@ export async function analyzeParasitosisOutbreak(): Promise<CollectiveAlert[]> {
         startDate,
         endDate
       );
-      if (totalTestsInArea === 0) continue;
+      console.log(`DEBUG: Municipality ${municipality_id} -> Total tests in area: ${totalTestsInArea}`);
+      if (totalTestsInArea === 0) {
+        console.log(`DEBUG: Municipality ${municipality_id} -> No tests found in area, skipping.`);
+        continue;
+      }
 
       const observedRate = (caseCount / totalTestsInArea) * 1000;
-      const month_year = endDate.toISOString().slice(0, 7);
+      const month_year = new Date(endDate.setFullYear(endDate.getFullYear() - 1)).toISOString().slice(0, 7);
+      console.log(`DEBUG: Municipality ${municipality_id} -> Observed Rate: ${observedRate}/1000, for month: ${month_year}`);
+
       const baseline = await getBaselineForRegion(municipality_id, month_year);
 
       if (!baseline) {
@@ -120,6 +141,8 @@ export async function analyzeParasitosisOutbreak(): Promise<CollectiveAlert[]> {
         );
         continue;
       }
+      console.log(`DEBUG: Municipality ${municipality_id} -> Fetched baseline:`, baseline);
+
 
       const { expected_rate_per_1000_tests, rate_standard_deviation } = baseline;
       const outbreakThreshold = expected_rate_per_1000_tests + 2 * rate_standard_deviation;
@@ -127,22 +150,31 @@ export async function analyzeParasitosisOutbreak(): Promise<CollectiveAlert[]> {
       console.log(
         `VALIDATION: Municipality ${municipality_id} -> Observed Rate: ${observedRate.toFixed(2)}/1000, Threshold: ${outbreakThreshold.toFixed(2)}/1000`
       );
+      console.log(
+        `DETAILS: Mun ${municipality_id} -> Cases: ${caseCount}, Expected Rate: ${expected_rate_per_1000_tests.toFixed(2)}, SD: ${rate_standard_deviation.toFixed(2)}, Threshold: ${outbreakThreshold.toFixed(2)}`
+      );
 
       if (observedRate > outbreakThreshold) {
         console.log(`CONFIRMED: Outbreak conditions met for municipality ${municipality_id}.`);
-        outbreakMunicipalitiesData.push({
+        const outbreakData = {
           municipality_id,
           caseCount,
           observedRate,
           expected_rate_per_1000_tests,
           outbreakThreshold,
           cases: municipalityCases,
-        });
+        };
+        outbreakMunicipalitiesData.push(outbreakData);
+        console.log(`DEBUG: Added outbreak data for municipality ${municipality_id}:`, outbreakData);
+      } else {
+        console.log(`DEBUG: Outbreak conditions NOT met for municipality ${municipality_id}.`);
       }
     }
 
     // 3. If outbreaks were found, create a single, combined alert for the cluster
     if (outbreakMunicipalitiesData.length > 0) {
+      console.log(`\nDEBUG: Found ${outbreakMunicipalitiesData.length} municipalities with outbreak conditions in cluster #${i}. Creating collective alert...`);
+
       const involvedMunicipalities = await Promise.all(
         outbreakMunicipalitiesData.map(async (data) => ({
           municipality_id: data.municipality_id,
@@ -193,6 +225,8 @@ export async function analyzeParasitosisOutbreak(): Promise<CollectiveAlert[]> {
         case_ids: allCases.map((c: EosinophiliaCase) => c.id),
       };
       collectiveAlerts.push(alert);
+      console.log('DEBUG: Created collective alert object:', alert);
+
 
       console.log(`COLLECTIVE ALERT: Outbreak confirmed for cluster involving municipalities: ${involvedMunicipalitiesStr} at Lat: ${clusterCentroid.lat.toFixed(2)}, Lon: ${clusterCentroid.lon.toFixed(2)}`);
 
@@ -207,6 +241,7 @@ export async function analyzeParasitosisOutbreak(): Promise<CollectiveAlert[]> {
       const notificationBody = `Surto confirmado em ${involvedMunicipalitiesStr} (Lat: ${clusterCentroid.lat.toFixed(2)}, Lon: ${clusterCentroid.lon.toFixed(2)}). Total de ${combinedCaseCount} casos.`;
       const description = `Foi detectado um surto de parasitose na região de ${involvedMunicipalitiesStr}. Total de ${combinedCaseCount} casos confirmados. Por favor, verifique os detalhes e tome as medidas cabíveis.`;
 
+      console.log('DEBUG: Preparing to send push notification...');
       await sendPushNotification(
         placeholderManagerToken,
         notificationData,
@@ -224,6 +259,10 @@ export async function analyzeParasitosisOutbreak(): Promise<CollectiveAlert[]> {
           notification_token: placeholderManagerToken,
         }
       );
+      console.log('DEBUG: Push notification sent.');
+
+    } else {
+      console.log(`DEBUG: No outbreak conditions met in any municipality for cluster #${i}. No collective alert created.`);
     }
   }
 

@@ -20,7 +20,9 @@ export async function saveNotification(notificationData: NewNotification): Promi
     await db.insert(notifications).values(notificationData);
     console.log(`Notification saved to database with ID: ${notificationData.id}`);
   } catch (error) {
-    console.error('Erro ao salvar notificação no banco de dados:', error);
+    console.error('Error saving notification to database:', error);
+    // Log the full error object for more details
+    console.error('Full error object:', JSON.stringify(error, null, 2));
     throw error;
   }
 }

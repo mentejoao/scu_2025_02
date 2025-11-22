@@ -117,7 +117,7 @@ app.get('/test-anemia-alert', async (req, res) => {
 });
 
 // Endpoint para testar o envio de notificação de surto de parasitose
-app.get('/test-parasitosis-outbreak', async (req, res) => {
+app.get('/run-parasitosis-outbreak-analyses', async (req, res) => {
   console.log('\n--- ACIONANDO TESTE DE ALERTA DE SURTO DE PARASITOSE ---');
   try {
     const alerts = await analyzeParasitosisOutbreak();

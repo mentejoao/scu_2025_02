@@ -32,15 +32,15 @@ export const getTotalTestsInArea = async (
   // Note: For production, consider using PostGIS for better geospatial queries
   const tests = await db
     .select()
-    .from(geolocatedTests)
+    .from(eosinophiliaCases)
     .where(
       and(
-        gte(geolocatedTests.test_date, start),
-        lte(geolocatedTests.test_date, end),
-        gte(geolocatedTests.latitude, lat - radiusLat),
-        lte(geolocatedTests.latitude, lat + radiusLat),
-        gte(geolocatedTests.longitude, lon - radiusLon),
-        lte(geolocatedTests.longitude, lon + radiusLon)
+        gte(eosinophiliaCases.test_date, start),
+        lte(eosinophiliaCases.test_date, end),
+        gte(eosinophiliaCases.latitude, lat - radiusLat),
+        lte(eosinophiliaCases.latitude, lat + radiusLat),
+        gte(eosinophiliaCases.longitude, lon - radiusLon),
+        lte(eosinophiliaCases.longitude, lon + radiusLon)
       )
     );
 
@@ -147,7 +147,7 @@ export const findMunicipalityByCoordinates = async (
       console.log(
         `DB: Found closest municipality: ${closestCity.nome} (${closestCity.codigo_ibge}) at distance ${closestCity.distance.toFixed(2)}km`
       );
-      
+
       // Convert to string and pad with zeros if needed (IBGE codes are typically 7 digits)
       return closestCity.codigo_ibge.toString().padStart(7, '0');
     }
@@ -170,7 +170,7 @@ export const findMunicipalityByCoordinates = async (
 export const getAlertDetails = async (alertId: string) => {
   try {
     console.log(`DB: Fetching alert details for ID: ${alertId}`);
-    
+
     const result = await db
       .select()
       .from(alerts)
@@ -199,18 +199,18 @@ export const getAlertDetails = async (alertId: string) => {
 export const getAllAlerts = async (municipalityId?: string) => {
   try {
     console.log(`DB: Fetching all alerts${municipalityId ? ` for municipality: ${municipalityId}` : ''}`);
-    
-    const result = municipalityId 
+
+    const result = municipalityId
       ? await db
-          .select()
-          .from(alerts)
-          .where(eq(alerts.municipality_id, municipalityId))
-          .orderBy(sql`${alerts.timestamp} DESC`)
+        .select()
+        .from(alerts)
+        .where(eq(alerts.municipality_id, municipalityId))
+        .orderBy(sql`${alerts.timestamp} DESC`)
       : await db
-          .select()
-          .from(alerts)
-          .orderBy(sql`${alerts.timestamp} DESC`);
-    
+        .select()
+        .from(alerts)
+        .orderBy(sql`${alerts.timestamp} DESC`);
+
     console.log(`DB: Found ${result.length} alerts`);
     return result;
   } catch (error) {
@@ -227,14 +227,14 @@ export const getAllAlerts = async (municipalityId?: string) => {
 export const insertAlert = async (alertData: typeof alerts.$inferInsert) => {
   try {
     console.log(`DB: Inserting new alert: ${alertData.title}`);
-    
+
     const result = await db.insert(alerts).values(alertData).returning();
-    
+
     if (result.length > 0) {
       console.log(`DB: Successfully inserted alert with ID: ${result[0].id}`);
       return result[0];
     }
-    
+
     return null;
   } catch (error) {
     console.error('DB: Error inserting alert:', error);
@@ -251,18 +251,18 @@ export const insertAlert = async (alertData: typeof alerts.$inferInsert) => {
 export const updateAlert = async (alertId: string, alertData: Partial<typeof alerts.$inferInsert>) => {
   try {
     console.log(`DB: Updating alert: ${alertId}`);
-    
+
     const result = await db
       .update(alerts)
       .set(alertData)
       .where(eq(alerts.id, alertId))
       .returning();
-    
+
     if (result.length > 0) {
       console.log(`DB: Successfully updated alert: ${alertId}`);
       return result[0];
     }
-    
+
     console.log(`DB: No alert found to update with ID: ${alertId}`);
     return null;
   } catch (error) {
@@ -279,17 +279,17 @@ export const updateAlert = async (alertId: string, alertData: Partial<typeof ale
 export const deleteAlert = async (alertId: string): Promise<boolean> => {
   try {
     console.log(`DB: Deleting alert: ${alertId}`);
-    
+
     const result = await db
       .delete(alerts)
       .where(eq(alerts.id, alertId))
       .returning();
-    
+
     if (result.length > 0) {
       console.log(`DB: Successfully deleted alert: ${alertId}`);
       return true;
     }
-    
+
     console.log(`DB: No alert found to delete with ID: ${alertId}`);
     return false;
   } catch (error) {
@@ -306,11 +306,11 @@ export const deleteAlert = async (alertId: string): Promise<boolean> => {
 export const bulkInsertAlerts = async (alertsData: (typeof alerts.$inferInsert)[]) => {
   try {
     if (alertsData.length === 0) return [];
-    
+
     console.log(`DB: Bulk inserting ${alertsData.length} alerts`);
-    
+
     const result = await db.insert(alerts).values(alertsData).returning();
-    
+
     console.log(`DB: Successfully bulk inserted ${result.length} alerts`);
     return result;
   } catch (error) {
