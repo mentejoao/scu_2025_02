@@ -1,23 +1,78 @@
 # Software para Computação Ubíqua — 2025.02
 
-#### Versão: 1.0
+#### Versão: 2.0
 
-#### Professor: 
-* Fabio Nogueira de Lucena
+#### Professor:
+
+- Fabio Nogueira de Lucena
 
 #### Alunos:
-* João Gabriel Cavalcante França
-* José Carlos Lee
-* Leonardo Moreira Araújo
-* Luis Felipe Ferreira Silva
-* Matheus Franco Cascão Costa
+
+- João Gabriel Cavalcante França
+- José Carlos Lee
+- Leonardo Moreira Araújo
+- Luis Felipe Ferreira Silva
+- Matheus Franco Cascão Costa
 
 #### Resumo:
 
 Sistema integrado (Backend + Android) para monitoramento em tempo real de condições clínicas a partir de hemogramas (FHIR), com detecção individual de Anemia Severa e análise coletiva de surtos de parasitose. O backend processa Bundles FHIR, popula uma base analítica, executa os algoritmos e dispara notificações push. O app Android consome os alertas e apresenta as informações.
 
-- Arquitetura (alto nível): consulte `diagramas/arquitetura_v1.png`.
+- Arquitetura (alto nível):
+  ![Arquitetura de Alto Nível](diagramas/arquitetura_v1.png)
+
+- Fluxo de Dados:
+  ![Fluxo de Dados](diagramas/diagrama_sequencia_fluxo_dados.png)
+
 - Repositório: `software-ubiquo/server` (Backend Node/TS) e `software-ubiquo/android-app` (Android).
+
+## Objetivo e Raciocínio do Projeto
+
+O objetivo central deste trabalho não é apenas processar dados médicos, mas demonstrar como a **Computação Ubíqua** pode atuar em duas frentes distintas e complementares na saúde pública: a **intervenção individual imediata** e a **vigilância epidemiológica coletiva**.
+
+### Por que escolhemos Anemia Severa e Parasitose?
+
+A escolha dessas duas patologias foi intencional para ilustrar dois paradigmas de processamento:
+
+1.  **Anemia Severa (O Indivíduo / Tempo Real):**
+
+    - **O Problema:** Uma condição crítica que coloca a vida do paciente em risco imediato. Não depende de contexto geográfico ou histórico, apenas do valor atual da hemoglobina.
+    - **A Solução:** Processamento _stream_ (tempo real). Assim que o dado chega, ele é analisado. Se for crítico, o médico é avisado no mesmo instante.
+    - **Raciocínio:** Demonstra a capacidade do sistema de reagir a eventos urgentes ("Push Notification" para ação rápida).
+
+2.  **Surtos de Parasitose (O Coletivo / Análise Espacial):**
+    - **O Problema:** Um caso isolado de eosinofilia (aumento de eosinófilos) pode não significar muito (pode ser alergia, medicamento, etc.). Porém, **vários casos** em uma mesma vizinhança, ao mesmo tempo, sugerem um fator ambiental (água contaminada, solo infectado).
+    - **A Solução:** Processamento _batch_ (agendado) e espacial. O sistema "olha para trás" (janela de 30 dias) e "olha ao redor" (geolocalização) para encontrar padrões que não são visíveis individualmente.
+    - **Raciocínio:** Demonstra a capacidade do sistema de transformar dados brutos individuais em inteligência de saúde pública (detecção de surtos).
+
+## Decisões de Design e Arquitetura
+
+Para suportar essas análises, tomamos algumas decisões arquiteturais importantes:
+
+### 1. Quilometragem e Vizinhança (O "Epsilon" do DBSCAN)
+
+Para detectar surtos, não basta contar casos por cidade. Um surto pode ser localizado em um bairro específico.
+
+- **Decisão:** Utilizamos o algoritmo de clusterização **DBSCAN** com um raio (`epsilon`) de aproximadamente **2km**.
+- **Por que?** Isso define o que consideramos "vizinhança". Se 5 ou mais casos de eosinofilia ocorrem dentro desse raio de 2km, o algoritmo os agrupa como um potencial foco de infecção. Isso permite detectar surtos locais que seriam invisíveis se olhássemos apenas para estatísticas estaduais ou municipais.
+
+### 2. O Papel do Município (Validação Estatística)
+
+Embora o cluster seja detectado por coordenadas (lat/long), precisamos saber se aquele aglomerado é _realmente_ anômalo.
+
+- **Decisão:** Usamos o **Município** como unidade administrativa para buscar a "linha de base" (baseline).
+- **Por que?** Dados de saúde pública são geralmente agregados por município. Ao identificar um cluster, verificamos a qual município ele pertence para comparar a taxa de incidência observada no cluster com a taxa histórica _daquele município_.
+
+### 3. A Comparação (Taxa Observada vs. Esperada)
+
+Como saber se um cluster é um surto ou apenas coincidência?
+
+- **Decisão:** Implementamos um teste estatístico simplificado (Z-score).
+- **Lógica:**
+  - Calculamos a **Taxa Observada** no cluster (Casos / Total de Exames na área).
+  - Comparamos com a **Taxa Esperada** (Média Histórica do Município + 2 Desvios Padrão).
+  - Se a Taxa Observada for maior que esse limite, o sistema emite um **Alerta de Surto**.
+- **Por que?** Isso reduz falsos positivos. Só alertamos o gestor se a concentração de casos for estatisticamente significativa para aquela região e época do ano.
 
 ## Visão Geral dos Algoritmos
 
@@ -33,6 +88,7 @@ Ambos dependem de uma base analítica otimizada, evitando duplicação de dados 
 A base analítica é populada pelo serviço principal à medida que os hemogramas FHIR são parseados. No código, as tabelas são definidas via Drizzle ORM em `server/src/database/schema.ts`. Abaixo, os conceitos e seus mapeamentos reais:
 
 - Tabela: `casos_eosinofilia` → real: `eosinophilia_cases`
+
   - Propósito: um registro por hemograma que atende ao critério clínico de eosinofilia. Fonte para análise espacial de surtos.
   - Populada: em tempo real, a cada hemograma processado.
   - Colunas (conceito → real):
@@ -46,6 +102,7 @@ A base analítica é populada pelo serviço principal à medida que os hemograma
     - `municipio_id (VARCHAR)` → `municipality_id` (código IBGE)
 
 - Tabela: `exames_geolocalizados` → real: `geolocated_tests`
+
   - Propósito: localização de todos os hemogramas recebidos (denominador para cálculo de taxas e comparação justa).
   - Populada: em tempo real, a cada hemograma processado.
   - Colunas (conceito → real):
@@ -65,6 +122,7 @@ A base analítica é populada pelo serviço principal à medida que os hemograma
     - `desvio_padrao_da_taxa (FLOAT)` → `std_dev_of_rate`
 
 Observações:
+
 - A normalização do valor de eosinófilos é feita no parser (`fhir-parser.ts`) e utilitário (`unit-converter.ts`), assegurando consistência de unidades.
 - A geolocalização usa endereço + extensões FHIR (lat/long). Para mapas precisos, recomenda-se evoluir para PostGIS quando necessário.
 
@@ -84,6 +142,7 @@ Observações:
 - Saída: `AlertIndividual` ou `null`.
 
 Notas:
+
 - O token FCM está como placeholder no código; configure-o via `.env`/secrets e fluxo do Android.
 - Avaliações complementares podem ser adicionadas (ex.: idade/sexo) se houver requisitos clínicos extra.
 
@@ -96,40 +155,49 @@ Notas:
 
 ### Processo Lógico
 
-1) Janela Temporal
+1. Janela Temporal
+
 - Define período: `data_fim = agora`, `data_inicio = agora - 30 dias`.
 
-2) Coleta de Casos
+2. Coleta de Casos
+
 - Query em `eosinophilia_cases` para registros na janela:
   - Seleciona `latitude`, `longitude`, `age`, `sex`, `exam_date`.
 
-3) Análise Espacial (DBSCAN)
+3. Análise Espacial (DBSCAN)
+
 - Aplica DBSCAN sobre coordenadas dos casos positivos.
 - Parâmetros (ajustáveis conforme densidade/região):
   - `epsilon (ε)`: raio máximo para agrupar pontos (ex.: `2000` metros).
   - `minPts`: mínimo de casos para formar cluster (ex.: `5`).
 - Resultado: lista de clusters (grupos de casos geograficamente próximos).
 
-4) Validação Estatística por Cluster
+4. Validação Estatística por Cluster
+
 - Para cada `cluster`:
   a) Mapeamento Geográfico
+
   - Calcula centroide do cluster.
   - Determina `municipality_id` do centroide (ver util `findMunicipalityByCoordinates` em `db.ts`).
 
   b) Taxa Observada (micro)
+
   - `n_casos_cluster = cluster.length`.
   - `total_exames_area`: COUNT em `geolocated_tests` na área do cluster (lat/long + raio `epsilon`) e janela temporal.
   - `taxa_observada = (n_casos_cluster / total_exames_area) * 1000`.
 
   c) Baseline (macro)
+
   - Consulta `regional_baselines` por `municipality_id` + `month_year` atual.
   - Obtém `expected_rate_per_1000` e `std_dev_of_rate`.
 
   d) Critério de Surto
+
   - `limite_surto = expected_rate_per_1000 + (2 * std_dev_of_rate)`.
   - Surto confirmado se `taxa_observada > limite_surto`.
 
   e) Alerta Coletivo
+
   - (Opcional) `filtrarCausasNaoInfecciosas(cluster)` para reduzir falsos positivos.
   - Constrói `AlertCollective` com: localização, número de casos, taxa observada vs. esperada, perfil demográfico (idade, sexo).
   - Dispara push notification para perfis responsáveis (FCM).
@@ -166,11 +234,11 @@ Notas:
 
 ## Fluxo de Dados (resumo)
 
-1) FHIR Bundle recebido (HAPI/servidor FHIR) → webhook backend.
-2) Parse (`fhir-parser.ts`) + normalização de unidades.
-3) Popula `eosinophilia_cases` e `geolocated_tests`.
-4) Executa `analyzeSevereAnemia` em tempo real; envia alerta individual.
-5) Agendado: `analyzeParasitosisOutbreak`; valida clusters com baseline; envia alerta coletivo.
+1. FHIR Bundle recebido (HAPI/servidor FHIR) → webhook backend.
+2. Parse (`fhir-parser.ts`) + normalização de unidades.
+3. Popula `eosinophilia_cases` e `geolocated_tests`.
+4. Executa `analyzeSevereAnemia` em tempo real; envia alerta individual.
+5. Agendado: `analyzeParasitosisOutbreak`; valida clusters com baseline; envia alerta coletivo.
 
 ## Funcionamento
 
@@ -187,6 +255,7 @@ Notas:
 - Notificações:
   - Envia push via Firebase Cloud Messaging (`server/src/services/notification-service.ts`) para médicos e gestores.
 - API:
+
   - Express (`server/src/api.ts`) com endpoints:
     - `PUT /fhir-webhook/Bundle/:id`
     - `GET /alert/:id`
@@ -233,14 +302,14 @@ Notas:
   curl http://localhost:3000/test-parasitosis-outbreak
   ```
 - `PUT /fhir-webhook/Bundle/:id` — processa Bundle FHIR pelo ID (busca no servidor FHIR).
-  1) Publique um Bundle no HAPI FHIR:
+  1. Publique um Bundle no HAPI FHIR:
   ```bash
   curl -X POST \
     -H "Content-Type: application/fhir+json" \
     -d @software-ubiquo/server/exemplos-hemogramas/sample-eosinophilia-bundle.json \
     http://localhost:8080/fhir/Bundle
   ```
-  2) Copie o `id` do Bundle retornado e acione o webhook:
+  2. Copie o `id` do Bundle retornado e acione o webhook:
   ```bash
   curl -X PUT http://localhost:3000/fhir-webhook/Bundle/<ID>
   ```
