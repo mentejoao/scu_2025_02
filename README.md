@@ -1,6 +1,6 @@
 # Software para Computação Ubíqua — 2025.02
 
-#### Versão: 2.0
+#### Versão: 2.5
 
 #### Professor:
 
@@ -25,6 +25,52 @@ Sistema integrado (Backend + Android) para monitoramento em tempo real de condi�
   ![Fluxo de Dados](diagramas/diagrama_sequencia_fluxo_dados.png)
 
 - Repositório: `software-ubiquo/server` (Backend Node/TS) e `software-ubiquo/android-app` (Android).
+
+## Stack Tecnológico
+
+O projeto foi construído utilizando tecnologias modernas e robustas para garantir escalabilidade e facilidade de manutenção:
+
+- **Backend:**
+
+  - **Linguagem:** TypeScript (Node.js)
+  - **Framework:** Express.js
+  - **ORM:** Drizzle ORM
+  - **Banco de Dados:** PostgreSQL
+  - **Integração:** HAPI FHIR (via Webhooks)
+  - **Notificações:** Firebase Cloud Messaging (FCM)
+
+- **Mobile (Android):**
+
+  - **Linguagem:** Kotlin
+  - **UI Toolkit:** Jetpack Compose (provável, verificar código) ou XML Views
+  - **Comunicação:** Retrofit (HTTP)
+
+- **DevOps & Infraestrutura:**
+  - **Containerização:** Docker & Docker Compose
+  - **Scripts:** Shell Script (para população de dados)
+
+## Estrutura do Projeto
+
+A organização do repositório reflete a separação de responsabilidades entre o servidor de processamento e o cliente móvel:
+
+```
+software-ubiquo/
+├── android-app/          # Código fonte do aplicativo Android
+│   ├── app/              # Módulo principal do app
+│   └── ...
+├── server/               # Backend Node.js/TypeScript
+│   ├── src/
+│   │   ├── algorithms/   # Lógica de detecção (Anemia, Parasitose)
+│   │   ├── database/     # Schemas do Drizzle e conexão DB
+│   │   ├── services/     # Serviços (FHIR, Notificações, etc.)
+│   │   ├── types/        # Definições de tipos TypeScript
+│   │   ├── api.ts        # Definição das rotas da API
+│   │   └── index.ts      # Ponto de entrada do servidor
+│   ├── DOCKER.md         # Guia específico para Docker
+│   ├── SETUP.md          # Guia de configuração manual
+│   └── ...
+└── diagramas/            # Artefatos visuais da documentação
+```
 
 ## Objetivo e Raciocínio do Projeto
 
@@ -215,17 +261,48 @@ Notas:
   - Agendador externo (ex.: `cron` no host, Kubernetes CronJob, ou serviço de agendamento da infraestrutura).
 - Tarefa: executar `analyzeParasitosisOutbreak()` diariamente.
 
-## Backend — Setup Rápido
+## Setup e Instalação
 
-- Pré-requisitos: Node 18+, pnpm/npm, PostgreSQL 15+, Docker (opcional), Firebase Admin Key.
-- Configuração:
-  - Copie `software-ubiquo/server/.env.example` para `.env` e preencha DB/FCM.
-  - Crie DB e rode migrações/seeding: `pnpm install && pnpm db:migrate && pnpm db:seed`.
-  - Dev: `pnpm dev` (Express em `http://localhost:3000`).
-- Endpoints úteis:
-  - Saúde: `GET /api/health`
-  - Testes algoritmo: `GET /test-anemia-alert`, `GET /test-parasitosis-outbreak`
-  - Webhook FHIR: `PUT /fhir-webhook/Bundle/:id` (ver `fhir-service.ts`/`api.ts`)
+Para rodar o projeto localmente, você tem duas opções principais: via Docker (recomendado) ou Manualmente.
+
+### Opção 1: Docker (Recomendado)
+
+A maneira mais fácil de subir o ambiente completo (Banco + Backend) é usando o Docker Compose.
+
+1.  **Pré-requisitos:** Docker e Docker Compose instalados.
+2.  **Configuração:**
+    - Navegue até `software-ubiquo/server`.
+    - Crie o arquivo `.env` baseado no `.env.example`.
+3.  **Execução:**
+    ```bash
+    docker compose up -d
+    ```
+    Isso subirá o PostgreSQL e a API Node.js automaticamente.
+4.  **Detalhes:** Consulte o arquivo `software-ubiquo/server/DOCKER.md` para comandos avançados e troubleshooting.
+
+### Opção 2: Manual (Node.js + PostgreSQL Local)
+
+1.  **Pré-requisitos:** Node.js 18+, pnpm (ou npm), PostgreSQL 15+ rodando.
+2.  **Instalação:**
+    ```bash
+    cd software-ubiquo/server
+    pnpm install
+    ```
+3.  **Banco de Dados:**
+    - Crie um banco de dados no seu Postgres local.
+    - Configure as credenciais no `.env`.
+    - Rode as migrações e o seed:
+      ```bash
+      pnpm db:migrate
+      pnpm db:seed
+      ```
+4.  **Rodar:**
+    ```bash
+    pnpm dev
+    ```
+    O servidor estará disponível em `http://localhost:3000`.
+
+Para mais detalhes sobre o setup manual, consulte `software-ubiquo/server/SETUP.md`.
 
 ## Android — Pontos-chave
 
@@ -403,6 +480,15 @@ Notas:
 - Token FCM: placeholder → substituir por token real do médico/dispositivo.
 - Geolocalização faltante no FHIR: sem coordenadas, casos não entram em análises espaciais.
 
-## Créditos e Licença
+## Melhorias Futuras (Roadmap)
 
-Projeto acadêmico (UFG – Computação Ubíqua). Consulte arquivos de licença/autor quando disponíveis.
+Para evoluir o sistema e torná-lo um produto de mercado, sugerimos os seguintes passos:
+
+1.  **Geoespacial Avançado:** Migrar para **PostGIS** para permitir queries espaciais mais complexas e performáticas (ex: polígonos de bairros reais em vez de raio simples).
+2.  **Dashboard Web:** Criar um painel administrativo (React/Next.js) para gestores de saúde visualizarem os mapas de calor e gerenciarem alertas.
+3.  **Segurança:** Implementar autenticação robusta (OAuth2/OpenID Connect) para proteger a API e os dados sensíveis dos pacientes.
+4.  **Machine Learning:** Treinar modelos preditivos com os dados históricos para antecipar surtos antes mesmo da regra estatística ser ativada.
+
+## Créditos
+
+Projeto acadêmico (UFG – Computação Ubíqua).
