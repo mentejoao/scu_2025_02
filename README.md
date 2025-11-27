@@ -18,9 +18,6 @@
 
 Sistema integrado (Backend + Android) para monitoramento em tempo real de condições clínicas a partir de hemogramas (FHIR), com detecção individual de Anemia Severa e análise coletiva de surtos de parasitose. O backend processa Bundles FHIR, popula uma base analítica, executa os algoritmos e dispara notificações push. O app Android consome os alertas e apresenta as informações.
 
-- Arquitetura (alto nível):  
-  ![Arquitetura de Alto Nível](diagramas/arquitetura_v1.png)
-
 - Fluxo de Dados:  
   ![Fluxo de Dados](diagramas/diagrama_sequencia_fluxo_dados.png)
 
