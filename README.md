@@ -1,6 +1,6 @@
 # Software para Computação Ubíqua — 2025.02
 
-#### Versão: 2.5
+#### Versão: 3.0
 
 #### Professor:
 
@@ -18,11 +18,14 @@
 
 Sistema integrado (Backend + Android) para monitoramento em tempo real de condições clínicas a partir de hemogramas (FHIR), com detecção individual de Anemia Severa e análise coletiva de surtos de parasitose. O backend processa Bundles FHIR, popula uma base analítica, executa os algoritmos e dispara notificações push. O app Android consome os alertas e apresenta as informações.
 
-- Arquitetura (alto nível):
+- Arquitetura (alto nível):  
   ![Arquitetura de Alto Nível](diagramas/arquitetura_v1.png)
 
-- Fluxo de Dados:
+- Fluxo de Dados:  
   ![Fluxo de Dados](diagramas/diagrama_sequencia_fluxo_dados.png)
+
+- Diagrama de Componentes:  
+  ![Diagrama de Componentes](diagramas/arquitetura_v2_png.png)
 
 - Repositório: `software-ubiquo/server` (Backend Node/TS) e `software-ubiquo/android-app` (Android).
 
@@ -480,7 +483,7 @@ Para mais detalhes sobre o setup manual, consulte `software-ubiquo/server/SETUP.
 - Token FCM: placeholder → substituir por token real do médico/dispositivo.
 - Geolocalização faltante no FHIR: sem coordenadas, casos não entram em análises espaciais.
 
-## Melhorias Futuras (Roadmap)
+## Possíveis Melhorias Futuras (Roadmap)
 
 Para evoluir o sistema e torná-lo um produto de mercado, sugerimos os seguintes passos:
 
